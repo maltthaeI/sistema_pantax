@@ -6,20 +6,18 @@ import { CustomSelect, formatarMesAnoAbrev } from '@/lib/utils';
 const ABAS = [
     { key: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
     { key: 'upload', label: 'Importar', icon: 'upload' },
-    { key: 'notas_emitidas', label: 'Notas Emitidas', icon: 'file-text' },
-    { key: 'notas_recebidas', label: 'Notas Recebidas', icon: 'file-text' },
-    { key: 'cte', label: 'CT-e', icon: 'truck' },
-    { key: 'apuracao_icms', label: 'Apuração ICMS', icon: 'dollar-sign' },
-    { key: 'apuracao_pis_cofins', label: 'PIS/COFINS', icon: 'percent' },
-    { key: 'empresas', label: 'Empresas', icon: 'building-2', adminOnly: true },
+    { key: 'resumo', label: 'Resumo', icon: 'pie-chart' },
 ];
 
 export default function Navbar() {
-    const { abaAtual, setAbaAtual, isAdmin, usuario, logout, darkMode, toggleDarkMode,
-        empresas, empresaAtualId, setEmpresaAtualId, periodos, periodoAtualId, setPeriodoAtualId, periodoAtual } = useAppContext();
+    const { abaAtual, setAbaAtual, usuario, logout, darkMode, toggleDarkMode,
+        empresas, empresaAtualId, setEmpresaAtualId, competencias, competenciaAtualId, setCompetenciaAtualId } = useAppContext();
 
     const opcoesEmpresa = empresas.map(e => ({ value: e.id, label: e.nome_fantasia || e.razao_social }));
-    const opcoesPeriodo = periodos.map(p => ({ value: p.id, label: `${formatarMesAnoAbrev(p.ano, p.mes)}${p.status === 'fechado' ? ' 🔒' : ''}` }));
+    const opcoesCompetencia = competencias.map(c => ({
+        value: c.key,
+        label: `${formatarMesAnoAbrev(c.ano, c.mes)} · ${c.tipo_calculo === 'previa' ? 'Prévia' : 'Fechamento'}`,
+    }));
 
     return (
         <header className="sticky top-0 z-40 bg-white dark:bg-darkBg no-print">
@@ -39,21 +37,16 @@ export default function Navbar() {
                             className="bg-gray-50 dark:bg-darkElevated border border-gray-200 dark:border-darkBorder rounded-md px-3 py-2 text-[12px] font-semibold outline-none"
                         />
                     </div>
-                    <div className="w-full max-w-[160px]">
+                    <div className="w-full max-w-[190px]">
                         <CustomSelect
-                            value={periodoAtualId}
-                            onChange={setPeriodoAtualId}
-                            options={opcoesPeriodo}
-                            placeholder="Período"
-                            disabled={opcoesPeriodo.length === 0}
+                            value={competenciaAtualId}
+                            onChange={setCompetenciaAtualId}
+                            options={opcoesCompetencia}
+                            placeholder="Competência"
+                            disabled={opcoesCompetencia.length === 0}
                             className="bg-gray-50 dark:bg-darkElevated border border-gray-200 dark:border-darkBorder rounded-md px-3 py-2 text-[12px] font-semibold outline-none"
                         />
                     </div>
-                    {periodoAtual?.status === 'fechado' && (
-                        <span className="hidden md:flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded shrink-0">
-                            <Icon name="lock" className="w-3 h-3" /> Fechado
-                        </span>
-                    )}
                 </div>
 
                 <div className="flex items-center gap-1">
@@ -69,7 +62,7 @@ export default function Navbar() {
             </div>
 
             <nav className="px-6 flex gap-1 bg-brand overflow-x-auto no-scrollbar-style">
-                {ABAS.filter(a => !a.adminOnly || isAdmin).map(aba => (
+                {ABAS.map(aba => (
                     <a key={aba.key} onClick={() => setAbaAtual(aba.key)} className={`px-4 py-2.5 text-[12px] font-semibold cursor-pointer transition-all duration-200 whitespace-nowrap rounded-t-lg flex items-center gap-2 tracking-wide uppercase border-t-2 ${abaAtual === aba.key ? 'bg-[#EDEFF0] text-gray-900 dark:bg-darkBg dark:text-white border-white' : 'border-transparent text-white/85 hover:bg-white/10 hover:text-white'}`}>
                         <Icon name={aba.icon} className="w-3.5 h-3.5" /> {aba.label}
                     </a>
