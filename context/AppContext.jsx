@@ -24,6 +24,8 @@ export const AppProvider = ({ children }) => {
     const toggleDarkMode = () => setDarkMode(!darkMode);
 
     const [abaAtual, setAbaAtual] = useState('dashboard');
+    // Submenu dentro da aba "Resumo": emitidas | recebidas | cte | icms | pis_cofins.
+    const [resumoSubAba, setResumoSubAba] = useState('emitidas');
 
     // ==== EMPRESAS (criadas automaticamente a partir do arquivo importado) ====
     const [empresas, setEmpresas] = useState([]);
@@ -38,6 +40,76 @@ export const AppProvider = ({ children }) => {
     // ==== IMPORTAÇÃO ====
     const [importBatches, setImportBatches] = useState([]);
     const [uploadEmAndamento, setUploadEmAndamento] = useState(false);
+    // Incrementa a cada upload concluído — telas que mostram dados agregados
+    // (Emitidas/Recebidas/CT-e, Dashboard) escutam isso pra refazer a busca
+    // mesmo quando a empresa/competência selecionada não muda (reimportar a
+    // mesma competência).
+    const [ultimaImportacaoEm, setUltimaImportacaoEm] = useState(0);
+
+    // ==== SELEÇÃO DE CFOPs (checkboxes nas telas Emitidas/Recebidas/CT-e) ====
+    // Emitidas = lado do débito; Recebidas + CT-e = lado do crédito da apuração.
+    const selecaoCfopVazia = () => ({ emitidas: new Set(), recebidas: new Set(), cte: new Set() });
+    const [selecoesCfop, setSelecoesCfop] = useState(selecaoCfopVazia());
+
+    function alternarSelecaoCfop(origem, chave) {
+        setSelecoesCfop(prev => {
+            const novoSet = new Set(prev[origem]);
+            if (novoSet.has(chave)) novoSet.delete(chave); else novoSet.add(chave);
+            return { ...prev, [origem]: novoSet };
+        });
+    }
+
+    function alternarTodosSelecaoCfop(origem, chaves, marcar) {
+        setSelecoesCfop(prev => {
+            const novoSet = new Set(prev[origem]);
+            for (const chave of chaves) { if (marcar) novoSet.add(chave); else novoSet.delete(chave); }
+            return { ...prev, [origem]: novoSet };
+        });
+    }
+
+    // Troca de competência invalida a seleção anterior (é de outro mês/tipo).
+    useEffect(() => { setSelecoesCfop(selecaoCfopVazia()); }, [competenciaAtualId]);
+
+    // ==== APURAÇÃO (gerada a partir da seleção, não fica salva no banco) ====
+    const [apuracaoIcms, setApuracaoIcms] = useState(null);
+    const [apuracaoPisCofins, setApuracaoPisCofins] = useState(null);
+    const [gerandoApuracao, setGerandoApuracao] = useState(false);
+
+    async function gerarApuracao() {
+        if (!empresaAtualId || !competenciaAtual) return;
+        setGerandoApuracao(true);
+        try {
+            const buscarOrigem = (origem) => supabase.from('nfe_resumo_cfop').select('*')
+                .eq('empresa_id', empresaAtualId).eq('ano', competenciaAtual.ano).eq('mes', competenciaAtual.mes)
+                .eq('tipo_calculo', competenciaAtual.tipo_calculo).eq('origem', origem);
+
+            const [emitidas, recebidas, cte] = await Promise.all([
+                buscarOrigem('emitidas'), buscarOrigem('recebidas'), buscarOrigem('cte'),
+            ]);
+
+            const somarSelecionados = (resultado, origem, campo) => (resultado.data || [])
+                .filter(l => selecoesCfop[origem].has(`${l.cfop_direcao}:${l.cfop}`))
+                .reduce((soma, l) => soma + (l[campo] || 0), 0);
+
+            const debitoIcms = somarSelecionados(emitidas, 'emitidas', 'valor_icms');
+            const creditoIcms = somarSelecionados(recebidas, 'recebidas', 'valor_icms') + somarSelecionados(cte, 'cte', 'valor_icms');
+            setApuracaoIcms({ debito: debitoIcms, credito: creditoIcms, resultado: debitoIcms - creditoIcms });
+
+            const debitoPis = somarSelecionados(emitidas, 'emitidas', 'valor_pis');
+            const creditoPis = somarSelecionados(recebidas, 'recebidas', 'valor_pis') + somarSelecionados(cte, 'cte', 'valor_pis');
+            const debitoCofins = somarSelecionados(emitidas, 'emitidas', 'valor_cofins');
+            const creditoCofins = somarSelecionados(recebidas, 'recebidas', 'valor_cofins') + somarSelecionados(cte, 'cte', 'valor_cofins');
+            setApuracaoPisCofins({
+                debitoPis, creditoPis, resultadoPis: debitoPis - creditoPis,
+                debitoCofins, creditoCofins, resultadoCofins: debitoCofins - creditoCofins,
+            });
+
+            setAbaAtual('resumo');
+            setResumoSubAba('icms');
+        } finally {
+            setGerandoApuracao(false);
+        }
+    }
 
     // ==== USUÁRIOS (admin) ====
     const [usuariosSistema, setUsuariosSistema] = useState([]);
@@ -180,13 +252,16 @@ export const AppProvider = ({ children }) => {
 
     useEffect(() => { if (empresaAtualId) carregarImportBatches(); }, [empresaAtualId]);
 
-    // A empresa não é escolhida antes do upload — nasce do próprio nome do arquivo.
-    async function uploadRelatorioNfe(file, tipoCalculo) {
+    // A empresa não é escolhida antes do upload — nasce do nome do arquivo de Emitidas.
+    // arquivos = { emitidas, recebidas, cte } (File cada) — os 3 sobem juntos.
+    async function uploadRelatorioNfe(arquivos, tipoCalculo) {
         setUploadEmAndamento(true);
         try {
             const token = await obterToken();
             const formData = new FormData();
-            formData.append('file', file);
+            formData.append('emitidas', arquivos.emitidas);
+            formData.append('recebidas', arquivos.recebidas);
+            formData.append('cte', arquivos.cte);
             formData.append('tipo_calculo', tipoCalculo);
             const res = await fetch('/api/import/nfe', {
                 method: 'POST',
@@ -201,6 +276,8 @@ export const AppProvider = ({ children }) => {
                 await carregarEmpresas();
                 setEmpresaAtualId(json.empresa_id);
                 setAbaAtual('resumo');
+                setResumoSubAba('emitidas');
+                setUltimaImportacaoEm(Date.now());
             }
         } catch (e) {
             alert('Erro na importação: ' + e.message);
@@ -287,10 +364,12 @@ export const AppProvider = ({ children }) => {
     const value = {
         isAdmin, usuario, setUsuario, logout,
         darkMode, toggleDarkMode,
-        abaAtual, setAbaAtual,
+        abaAtual, setAbaAtual, resumoSubAba, setResumoSubAba,
         empresas, empresaAtualId, setEmpresaAtualId, empresaAtual,
         competencias, competenciaAtualId, setCompetenciaAtualId, competenciaAtual,
-        importBatches, uploadEmAndamento, uploadRelatorioNfe,
+        importBatches, uploadEmAndamento, uploadRelatorioNfe, ultimaImportacaoEm,
+        selecoesCfop, alternarSelecaoCfop, alternarTodosSelecaoCfop,
+        apuracaoIcms, apuracaoPisCofins, gerandoApuracao, gerarApuracao,
         usuariosSistema, modalUsuarioAberto, setModalUsuarioAberto, novoUsuario, setNovoUsuario, salvandoUsuario,
         abrirNovoUsuario, abrirEdicaoUsuario, salvarUsuario,
     };

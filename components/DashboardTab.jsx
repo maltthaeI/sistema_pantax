@@ -5,7 +5,7 @@ import Icon from '@/components/Icon';
 import { formatarValorFinanceiro, formatarMesAnoAbrev } from '@/lib/utils';
 
 export default function DashboardTab() {
-    const { empresaAtual, empresaAtualId, competenciaAtual, setAbaAtual } = useAppContext();
+    const { empresaAtual, empresaAtualId, competenciaAtual, setAbaAtual, setResumoSubAba, ultimaImportacaoEm } = useAppContext();
     const [resumo, setResumo] = useState({ autorizadas: 0, canceladas: 0, valorTotal: 0 });
 
     useEffect(() => {
@@ -19,7 +19,7 @@ export default function DashboardTab() {
             const valorTotal = (soma.data || []).reduce((s, l) => s + (l.valor_total || 0), 0);
             setResumo({ autorizadas: batch.data?.itens_autorizados || 0, canceladas: batch.data?.itens_cancelados || 0, valorTotal });
         })();
-    }, [empresaAtualId, competenciaAtual]);
+    }, [empresaAtualId, competenciaAtual, ultimaImportacaoEm]);
 
     if (!empresaAtual) {
         return <div className="p-6 text-center text-[13px] text-gray-500">Nenhuma empresa importada ainda.</div>;
@@ -65,7 +65,7 @@ export default function DashboardTab() {
                 ))}
             </div>
 
-            <button onClick={() => setAbaAtual('resumo')} className="text-left bg-white dark:bg-darkCard p-5 rounded-xl border border-gray-200 dark:border-darkBorder shadow-sm hover:shadow-md transition">
+            <button onClick={() => { setAbaAtual('resumo'); setResumoSubAba('emitidas'); }} className="text-left bg-white dark:bg-darkCard p-5 rounded-xl border border-gray-200 dark:border-darkBorder shadow-sm hover:shadow-md transition">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Valor Total (notas Autorizadas)</span>
                 <h2 className="text-xl font-black text-gray-900 dark:text-white">R$ {formatarValorFinanceiro(resumo.valorTotal)}</h2>
                 <span className="text-[11px] text-brand font-semibold mt-1 inline-block">Ver resumo por CFOP →</span>

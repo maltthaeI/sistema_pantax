@@ -6,6 +6,8 @@ import { extrairNomeEmpresaDoArquivo } from '@/lib/nomeEmpresaDoArquivo';
 
 export const maxDuration = 60;
 
+const TIPOS_ARQUIVO = ['emitidas', 'recebidas', 'cte'];
+
 async function encontrarOuCriarEmpresa(admin, nomeEmpresa) {
     const { data: existente } = await admin.from('empresas').select('id').ilike('razao_social', nomeEmpresa).maybeSingle();
     if (existente) return existente.id;
@@ -21,28 +23,40 @@ export async function POST(request) {
     if (erro) return erro;
 
     const formData = await request.formData();
-    const file = formData.get('file');
     const tipoCalculo = formData.get('tipo_calculo');
-    if (!file) return NextResponse.json({ error: 'Arquivo é obrigatório.' }, { status: 400 });
     if (!['previa', 'fechamento'].includes(tipoCalculo)) {
         return NextResponse.json({ error: 'Informe se é Prévia ou Fechamento.' }, { status: 400 });
     }
 
+    const arquivosPorTipo = {};
+    for (const tipo of TIPOS_ARQUIVO) {
+        const file = formData.get(tipo);
+        if (!file) return NextResponse.json({ error: `Arquivo de ${tipo} é obrigatório.` }, { status: 400 });
+        arquivosPorTipo[tipo] = file;
+    }
+
+    // Nome da empresa vem sempre do arquivo de Emitidas.
     let nomeEmpresa, empresaId;
     try {
-        nomeEmpresa = extrairNomeEmpresaDoArquivo(file.name);
+        nomeEmpresa = extrairNomeEmpresaDoArquivo(arquivosPorTipo.emitidas.name);
         empresaId = await encontrarOuCriarEmpresa(admin, nomeEmpresa);
     } catch (e) {
         return NextResponse.json({ error: e.message }, { status: 400 });
     }
 
     const { data: batch } = await admin.from('import_batches').insert([{
-        empresa_id: empresaId, tipo_arquivo: 'nfe', tipo_calculo: tipoCalculo, nome_arquivo: file.name, status: 'processando', importado_por: usuario.id,
+        empresa_id: empresaId, tipo_arquivo: 'nfe', tipo_calculo: tipoCalculo,
+        nome_arquivo_emitidas: arquivosPorTipo.emitidas.name,
+        nome_arquivo_recebidas: arquivosPorTipo.recebidas.name,
+        nome_arquivo_cte: arquivosPorTipo.cte.name,
+        status: 'processando', importado_por: usuario.id,
     }]).select().single();
 
     try {
-        const buffer = await file.arrayBuffer();
-        const resultado = await importarRelatorioNfe(admin, { empresaId, buffer, batchId: batch.id, tipoCalculo });
+        const arquivos = await Promise.all(TIPOS_ARQUIVO.map(async (tipo) => ({
+            tipo, buffer: await arquivosPorTipo[tipo].arrayBuffer(),
+        })));
+        const resultado = await importarRelatorioNfe(admin, { empresaId, arquivos, batchId: batch.id, tipoCalculo });
 
         await admin.from('import_batches').update({
             status: 'concluido', linhas_processadas: resultado.linhas_processadas, linhas_erro: resultado.linhas_erro,
