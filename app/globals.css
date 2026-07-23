@@ -56,6 +56,34 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 .animate-modal-backdrop { animation: modal-backdrop-in 0.2s ease-out; }
 .animate-modal-in { animation: modal-box-in 0.28s cubic-bezier(0.16, 1, 0.3, 1); }
 
+/* ---- Spinner cube grid (feedback de processamento) ---- */
+.cube-grid {
+    width: 32px;
+    height: 32px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+}
+.cube-grid .cube {
+    background-color: var(--color-brand);
+    border-radius: 2px;
+    animation: cube-grid-scale 1.3s ease-in-out infinite;
+}
+.cube-grid .cube:nth-child(1) { animation-delay: 0.2s; }
+.cube-grid .cube:nth-child(2) { animation-delay: 0.3s; }
+.cube-grid .cube:nth-child(3) { animation-delay: 0.4s; }
+.cube-grid .cube:nth-child(4) { animation-delay: 0.1s; }
+.cube-grid .cube:nth-child(5) { animation-delay: 0.2s; }
+.cube-grid .cube:nth-child(6) { animation-delay: 0.3s; }
+.cube-grid .cube:nth-child(7) { animation-delay: 0s; }
+.cube-grid .cube:nth-child(8) { animation-delay: 0.1s; }
+.cube-grid .cube:nth-child(9) { animation-delay: 0.2s; }
+@keyframes cube-grid-scale {
+    0%, 70%, 100% { transform: scale3d(1, 1, 1); }
+    35% { transform: scale3d(0, 0, 1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .animate-modal-backdrop, .animate-modal-in { animation: none; }
+    .cube-grid .cube { animation: none; opacity: 0.6; }
 }

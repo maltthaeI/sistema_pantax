@@ -2,7 +2,7 @@
 import { useRef, useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import Icon from '@/components/Icon';
-import { formatarMesAnoAbrev } from '@/lib/utils';
+import { formatarMesAnoAbrev, CubeGridSpinner } from '@/lib/utils';
 
 const TIPOS_CALCULO = [
     { value: 'previa', label: 'Prévia', descricao: 'Dia 1 ao 20 do mês' },
@@ -84,7 +84,13 @@ export default function UploadTab() {
                 <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Importar relatórios NF-e</h4>
             </div>
 
-            <div className="max-w-2xl flex flex-col gap-4">
+            <div className="relative max-w-2xl flex flex-col gap-4">
+                {uploadEmAndamento && (
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white/85 dark:bg-darkBg/85 glass rounded-xl">
+                        <CubeGridSpinner />
+                        <p className="text-[12px] font-semibold text-gray-600 dark:text-gray-300">Processando planilhas...</p>
+                    </div>
+                )}
                 <div className="flex gap-2 max-w-md">
                     {TIPOS_CALCULO.map(t => (
                         <button

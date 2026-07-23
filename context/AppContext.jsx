@@ -26,6 +26,8 @@ export const AppProvider = ({ children }) => {
     const [abaAtual, setAbaAtual] = useState('dashboard');
     // Submenu dentro da aba "Resumo": emitidas | recebidas | cte | icms | pis_cofins.
     const [resumoSubAba, setResumoSubAba] = useState('emitidas');
+    // Drawer da sidebar em telas mobile (a sidebar fixa só aparece em lg+).
+    const [sidebarMobileAberto, setSidebarMobileAberto] = useState(false);
 
     // ==== EMPRESAS (criadas automaticamente a partir do arquivo importado) ====
     const [empresas, setEmpresas] = useState([]);
@@ -395,6 +397,7 @@ export const AppProvider = ({ children }) => {
         isAdmin, usuario, setUsuario, logout,
         darkMode, toggleDarkMode,
         abaAtual, setAbaAtual, resumoSubAba, setResumoSubAba,
+        sidebarMobileAberto, setSidebarMobileAberto,
         empresas, empresaAtualId, setEmpresaAtualId, empresaAtual,
         competencias, competenciaAtualId, setCompetenciaAtualId, competenciaAtual,
         importBatches, uploadEmAndamento, uploadRelatorioNfe, ultimaImportacaoEm,

@@ -18,13 +18,13 @@ export default function ResumoTab() {
 
     return (
         <div className="flex flex-col">
-            <div className="px-6 pt-3 flex gap-1 border-b border-gray-200 dark:border-darkBorder bg-white dark:bg-darkBg overflow-x-auto no-scrollbar-style">
+            <div className="px-6 py-3 flex gap-1.5 border-b border-gray-200 dark:border-darkBorder bg-white dark:bg-darkBg overflow-x-auto no-scrollbar-style">
                 {SUBABAS.map(sub => (
                     <button
                         key={sub.key}
                         type="button"
                         onClick={() => setResumoSubAba(sub.key)}
-                        className={`px-4 py-2 text-[11px] font-semibold cursor-pointer transition whitespace-nowrap rounded-t-md flex items-center gap-1.5 uppercase tracking-wide border-b-2 ${resumoSubAba === sub.key ? 'border-brand text-brand' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
+                        className={`px-3.5 py-1.5 text-[11px] font-semibold cursor-pointer transition whitespace-nowrap rounded-full flex items-center gap-1.5 uppercase tracking-wide ${resumoSubAba === sub.key ? 'bg-brand text-white shadow-sm' : 'bg-gray-100 dark:bg-darkElevated text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
                     >
                         <Icon name={sub.icon} className="w-3.5 h-3.5" /> {sub.label}
                     </button>
