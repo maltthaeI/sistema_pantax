@@ -75,6 +75,11 @@ export const AppProvider = ({ children }) => {
     const [apuracaoPisCofins, setApuracaoPisCofins] = useState(null);
     const [gerandoApuracao, setGerandoApuracao] = useState(false);
 
+    // Alíquotas do regime não-cumulativo (confirmadas contra planilha de
+    // referência real — PIS/COFINS não é soma direta da planilha, é Base x Alíquota).
+    const ALIQUOTA_PIS = 0.0165;
+    const ALIQUOTA_COFINS = 0.076;
+
     async function gerarApuracao() {
         if (!empresaAtualId || !competenciaAtual) return;
         setGerandoApuracao(true);
@@ -86,20 +91,45 @@ export const AppProvider = ({ children }) => {
             const [emitidas, recebidas, cte] = await Promise.all([
                 buscarOrigem('emitidas'), buscarOrigem('recebidas'), buscarOrigem('cte'),
             ]);
+            const linhasEmitidas = emitidas.data || [];
+            const linhasRecebidas = recebidas.data || [];
+            const linhasCte = cte.data || [];
 
-            const somarSelecionados = (resultado, origem, campo) => (resultado.data || [])
+            // direcaoFiltro opcional: só soma linhas selecionadas E daquela direção
+            // (Emitidas mistura vendas — saída — com devoluções de venda — entrada).
+            const somar = (linhas, origem, campo, direcaoFiltro = null) => linhas
                 .filter(l => selecoesCfop[origem].has(`${l.cfop_direcao}:${l.cfop}`))
+                .filter(l => !direcaoFiltro || l.cfop_direcao === direcaoFiltro)
                 .reduce((soma, l) => soma + (l[campo] || 0), 0);
 
-            const debitoIcms = somarSelecionados(emitidas, 'emitidas', 'valor_icms');
-            const creditoIcms = somarSelecionados(recebidas, 'recebidas', 'valor_icms') + somarSelecionados(cte, 'cte', 'valor_icms');
+            // ==== ICMS: débito = saídas de Emitidas; crédito = devoluções (entrada
+            // em Emitidas) + Recebidas + CT-e, todas as direções ====
+            const debitoIcms = somar(linhasEmitidas, 'emitidas', 'valor_icms', 'saida');
+            const creditoIcms = somar(linhasEmitidas, 'emitidas', 'valor_icms', 'entrada')
+                + somar(linhasRecebidas, 'recebidas', 'valor_icms')
+                + somar(linhasCte, 'cte', 'valor_icms');
             setApuracaoIcms({ debito: debitoIcms, credito: creditoIcms, resultado: debitoIcms - creditoIcms });
 
-            const debitoPis = somarSelecionados(emitidas, 'emitidas', 'valor_pis');
-            const creditoPis = somarSelecionados(recebidas, 'recebidas', 'valor_pis') + somarSelecionados(cte, 'cte', 'valor_pis');
-            const debitoCofins = somarSelecionados(emitidas, 'emitidas', 'valor_cofins');
-            const creditoCofins = somarSelecionados(recebidas, 'recebidas', 'valor_cofins') + somarSelecionados(cte, 'cte', 'valor_cofins');
+            // ==== PIS/COFINS: Base x Alíquota, não soma direta ====
+            // Base débito = Valor Total das saídas - ICMS das saídas.
+            const baseDebito = somar(linhasEmitidas, 'emitidas', 'valor_total', 'saida')
+                - somar(linhasEmitidas, 'emitidas', 'valor_icms', 'saida');
+
+            // Base crédito = (Recebidas + CT-e + devoluções de Emitidas), cada uma
+            // com Valor Total menos os impostos que ela tiver (ICMS/ICMS ST/IPI).
+            const baseCreditoRecebidas = somar(linhasRecebidas, 'recebidas', 'valor_total')
+                - (somar(linhasRecebidas, 'recebidas', 'valor_icms') + somar(linhasRecebidas, 'recebidas', 'valor_icms_st') + somar(linhasRecebidas, 'recebidas', 'valor_ipi'));
+            const baseCreditoCte = somar(linhasCte, 'cte', 'valor_total') - somar(linhasCte, 'cte', 'valor_icms');
+            const baseCreditoDevolucao = somar(linhasEmitidas, 'emitidas', 'valor_total', 'entrada')
+                - (somar(linhasEmitidas, 'emitidas', 'valor_icms', 'entrada') + somar(linhasEmitidas, 'emitidas', 'valor_icms_st', 'entrada') + somar(linhasEmitidas, 'emitidas', 'valor_ipi', 'entrada'));
+            const baseCredito = baseCreditoRecebidas + baseCreditoCte + baseCreditoDevolucao;
+
+            const debitoPis = baseDebito * ALIQUOTA_PIS;
+            const creditoPis = baseCredito * ALIQUOTA_PIS;
+            const debitoCofins = baseDebito * ALIQUOTA_COFINS;
+            const creditoCofins = baseCredito * ALIQUOTA_COFINS;
             setApuracaoPisCofins({
+                baseDebito, baseCredito,
                 debitoPis, creditoPis, resultadoPis: debitoPis - creditoPis,
                 debitoCofins, creditoCofins, resultadoCofins: debitoCofins - creditoCofins,
             });

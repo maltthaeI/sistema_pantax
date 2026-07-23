@@ -30,7 +30,7 @@ export default function IcmsTab() {
                     <h2 className="text-lg font-black text-gray-900 dark:text-white">R$ {formatarValorFinanceiro(debito)}</h2>
                 </div>
                 <div className="bg-white dark:bg-darkCard p-5 rounded-xl border border-gray-200 dark:border-darkBorder shadow-sm">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Crédito (Recebidas + CT-e selecionadas)</span>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Crédito (devoluções em Emitidas + Recebidas + CT-e selecionadas)</span>
                     <h2 className="text-lg font-black text-gray-900 dark:text-white">R$ {formatarValorFinanceiro(credito)}</h2>
                 </div>
             </div>
