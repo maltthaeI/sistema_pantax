@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { chaveLinhaCfop } from '@/lib/utils';
 
 export { supabase };
 
@@ -100,7 +101,7 @@ export const AppProvider = ({ children }) => {
             // direcaoFiltro opcional: só soma linhas selecionadas E daquela direção
             // (Emitidas mistura vendas — saída — com devoluções de venda — entrada).
             const somar = (linhas, origem, campo, direcaoFiltro = null) => linhas
-                .filter(l => selecoesCfop[origem].has(`${l.cfop_direcao}:${l.cfop}`))
+                .filter(l => selecoesCfop[origem].has(chaveLinhaCfop(l)))
                 .filter(l => !direcaoFiltro || l.cfop_direcao === direcaoFiltro)
                 .reduce((soma, l) => soma + (l[campo] || 0), 0);
 

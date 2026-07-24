@@ -2,11 +2,11 @@
 import { useEffect, useState } from 'react';
 import { useAppContext, supabase } from '@/context/AppContext';
 import Icon from '@/components/Icon';
-import { formatarValorFinanceiro, formatarMesAnoAbrev } from '@/lib/utils';
+import { formatarValorFinanceiro, formatarMesAnoAbrev, chaveLinhaCfop } from '@/lib/utils';
 
-function ColunaCfop({ titulo, icon, cor, linhas, selecionados, onToggle, onToggleTodos }) {
+function ColunaCfop({ titulo, icon, cor, linhas, selecionados, onToggle, onToggleTodos, colunaExtra }) {
     const somar = (campo) => linhas.reduce((soma, l) => soma + (l[campo] || 0), 0);
-    const todosSelecionados = linhas.length > 0 && linhas.every(l => selecionados.has(`${l.cfop_direcao}:${l.cfop}`));
+    const todosSelecionados = linhas.length > 0 && linhas.every(l => selecionados.has(chaveLinhaCfop(l)));
 
     return (
         <div className="bg-white dark:bg-darkCard border border-gray-200 dark:border-darkBorder rounded-xl overflow-hidden">
@@ -28,14 +28,14 @@ function ColunaCfop({ titulo, icon, cor, linhas, selecionados, onToggle, onToggl
                             <th className="px-4 py-2 font-semibold text-right">Valor do IPI</th>
                             <th className="px-4 py-2 font-semibold text-right">Valor do ICMS</th>
                             <th className="px-4 py-2 font-semibold text-right">Valor do ICMS ST</th>
-                            <th className="px-4 py-2 font-semibold text-right">ICMS UF Destino</th>
+                            <th className="px-4 py-2 font-semibold text-right">{colunaExtra.label}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {linhas.length === 0 ? (
                             <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-400 italic">Nenhum CFOP encontrado.</td></tr>
                         ) : linhas.map(l => {
-                            const chave = `${l.cfop_direcao}:${l.cfop}`;
+                            const chave = chaveLinhaCfop(l);
                             return (
                                 <tr key={chave} className="border-t border-gray-100 dark:border-darkBorder">
                                     <td className="px-4 py-2">
@@ -46,7 +46,7 @@ function ColunaCfop({ titulo, icon, cor, linhas, selecionados, onToggle, onToggl
                                     <td className="px-4 py-2 text-right text-gray-700 dark:text-gray-300">R$ {formatarValorFinanceiro(l.valor_ipi)}</td>
                                     <td className="px-4 py-2 text-right text-gray-700 dark:text-gray-300">R$ {formatarValorFinanceiro(l.valor_icms)}</td>
                                     <td className="px-4 py-2 text-right text-gray-700 dark:text-gray-300">R$ {formatarValorFinanceiro(l.valor_icms_st)}</td>
-                                    <td className="px-4 py-2 text-right text-gray-700 dark:text-gray-300">R$ {formatarValorFinanceiro(l.valor_icms_uf_destino)}</td>
+                                    <td className="px-4 py-2 text-right text-gray-700 dark:text-gray-300">R$ {formatarValorFinanceiro(l[colunaExtra.campo])}</td>
                                 </tr>
                             );
                         })}
@@ -60,7 +60,7 @@ function ColunaCfop({ titulo, icon, cor, linhas, selecionados, onToggle, onToggl
                                 <td className="px-4 py-2 text-right text-gray-900 dark:text-white">R$ {formatarValorFinanceiro(somar('valor_ipi'))}</td>
                                 <td className="px-4 py-2 text-right text-gray-900 dark:text-white">R$ {formatarValorFinanceiro(somar('valor_icms'))}</td>
                                 <td className="px-4 py-2 text-right text-gray-900 dark:text-white">R$ {formatarValorFinanceiro(somar('valor_icms_st'))}</td>
-                                <td className="px-4 py-2 text-right text-gray-900 dark:text-white">R$ {formatarValorFinanceiro(somar('valor_icms_uf_destino'))}</td>
+                                <td className="px-4 py-2 text-right text-gray-900 dark:text-white">R$ {formatarValorFinanceiro(somar(colunaExtra.campo))}</td>
                             </tr>
                         </tfoot>
                     )}
@@ -117,10 +117,17 @@ export default function ResumoCfopTab({ origem, titulo, mostrarGerar = false }) 
     }
 
     const selecionados = selecoesCfop[origem];
-    const entrada = linhas.filter(l => l.cfop_direcao === 'entrada');
-    const saida = linhas.filter(l => l.cfop_direcao === 'saida');
+    // Recebidas separa por Categoria da planilha (Revenda x Uso e Consumo);
+    // Emitidas/CT-e continuam separando por cfop_direcao (Entrada x Saída).
+    const porCategoria = origem === 'recebidas';
+    const grupoA = porCategoria ? linhas.filter(l => l.categoria === 'revenda') : linhas.filter(l => l.cfop_direcao === 'entrada');
+    const grupoB = porCategoria ? linhas.filter(l => l.categoria === 'uso_consumo') : linhas.filter(l => l.cfop_direcao === 'saida');
+    const semCategoria = porCategoria ? linhas.filter(l => l.categoria !== 'revenda' && l.categoria !== 'uso_consumo') : [];
+    const colunaExtra = porCategoria
+        ? { label: 'ICMS Simples Nacional', campo: 'valor_icms_simples_nacional' }
+        : { label: 'ICMS UF Destino', campo: 'valor_icms_uf_destino' };
     const toggle = (chave) => alternarSelecaoCfop(origem, chave);
-    const toggleTodos = (linhasGrupo, marcar) => alternarTodosSelecaoCfop(origem, linhasGrupo.map(l => `${l.cfop_direcao}:${l.cfop}`), marcar);
+    const toggleTodos = (linhasGrupo, marcar) => alternarTodosSelecaoCfop(origem, linhasGrupo.map(chaveLinhaCfop), marcar);
     const nadaSelecionado = selecionados.size === 0;
 
     return (
@@ -152,8 +159,20 @@ export default function ResumoCfopTab({ origem, titulo, mostrarGerar = false }) 
                 <p className="text-[12px] text-gray-400 italic">Carregando...</p>
             ) : (
                 <div className="flex flex-col gap-4">
-                    <ColunaCfop titulo="Entrada" icon="trending-down" cor="text-success" linhas={entrada} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} />
-                    <ColunaCfop titulo="Saída" icon="trending-up" cor="text-info" linhas={saida} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} />
+                    {porCategoria ? (
+                        <>
+                            <ColunaCfop titulo="Revenda" icon="trending-down" cor="text-success" linhas={grupoA} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} colunaExtra={colunaExtra} />
+                            <ColunaCfop titulo="Uso e Consumo" icon="trending-up" cor="text-info" linhas={grupoB} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} colunaExtra={colunaExtra} />
+                            {semCategoria.length > 0 && (
+                                <ColunaCfop titulo="Sem Categoria" icon="alert-triangle" cor="text-gray-500" linhas={semCategoria} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} colunaExtra={colunaExtra} />
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            <ColunaCfop titulo="Entrada" icon="trending-down" cor="text-success" linhas={grupoA} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} colunaExtra={colunaExtra} />
+                            <ColunaCfop titulo="Saída" icon="trending-up" cor="text-info" linhas={grupoB} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} colunaExtra={colunaExtra} />
+                        </>
+                    )}
                 </div>
             )}
         </div>
