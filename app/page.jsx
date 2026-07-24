@@ -12,11 +12,11 @@ function MainContent() {
     const { abaAtual } = useAppContext();
 
     return (
-        <div className="flex min-h-screen no-print bg-[#EDEFF0] dark:bg-darkBg">
+        <div className="flex min-h-screen no-print bg-lightBg dark:bg-darkBg">
             <Sidebar />
             <div className="flex-1 flex flex-col min-w-0">
                 <Topbar />
-                <div className="flex-1 bg-[#EDEFF0] dark:bg-darkBg relative">
+                <div className="flex-1 bg-lightBg dark:bg-darkBg relative">
                     {abaAtual === 'dashboard' && <DashboardTab />}
                     {abaAtual === 'upload' && <UploadTab />}
                     {abaAtual === 'resumo' && <ResumoTab />}

@@ -15,7 +15,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="pt-BR" className={`${montserrat.className} antialiased`}>
-      <body className="bg-[#EDEFF0] dark:bg-darkBg text-[#454545] text-[13px] dark:text-[#EDEDED] min-h-screen selection:bg-brand selection:text-white tracking-tight">
+      <body className="bg-lightBg dark:bg-darkBg text-lightText text-[13px] dark:text-darkText min-h-screen selection:bg-brand selection:text-white tracking-tight">
         {children}
       </body>
     </html>

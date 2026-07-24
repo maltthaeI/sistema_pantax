@@ -20,7 +20,7 @@ export default function Topbar() {
                     type="button"
                     onClick={() => setSidebarMobileAberto(!sidebarMobileAberto)}
                     aria-label="Abrir menu"
-                    className="lg:hidden p-2 -ml-2 rounded-md hover:bg-gray-100 dark:hover:bg-darkHover transition text-gray-600 dark:text-[#888888] shrink-0"
+                    className="lg:hidden p-2 -ml-2 rounded-md hover:bg-gray-100 dark:hover:bg-darkHover transition text-gray-600 dark:text-darkMuted shrink-0"
                 >
                     <Icon name="menu" className="w-5 h-5" />
                 </button>
@@ -48,12 +48,12 @@ export default function Topbar() {
                 </div>
 
                 <div className="flex items-center gap-1">
-                    <button onClick={toggleDarkMode} className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-darkHover transition text-gray-600 dark:text-[#888888]">
+                    <button onClick={toggleDarkMode} className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-darkHover transition text-gray-600 dark:text-darkMuted">
                         <Icon name={darkMode ? 'sun' : 'moon'} className="w-5 h-5" />
                     </button>
                     <div className="hidden sm:block w-[1px] h-8 bg-gray-200 dark:bg-darkBorder mx-1"></div>
-                    <span className="hidden sm:inline text-[12px] font-semibold text-gray-700 dark:text-[#EDEDED] mr-1">{usuario?.nome}</span>
-                    <button type="button" onClick={() => logout()} aria-label="Sair" className="text-gray-400 hover:text-red-500 transition p-2 rounded-md hover:bg-red-50 dark:hover:bg-red-950/30">
+                    <span className="hidden sm:inline text-[12px] font-semibold text-gray-700 dark:text-darkText mr-1">{usuario?.nome}</span>
+                    <button type="button" onClick={() => logout()} aria-label="Sair" className="text-gray-400 hover:text-danger transition p-2 rounded-md hover:bg-danger/10 dark:hover:bg-danger/15">
                         <Icon name="log-out" className="w-4 h-4" />
                     </button>
                 </div>

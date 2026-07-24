@@ -147,13 +147,13 @@ export default function ResumoCfopTab({ origem, titulo, mostrarGerar = false }) 
                 <p className="text-[11px] text-gray-400 -mt-4">Marque os CFOPs de débito aqui em Emitidas e, se quiser restringir o crédito, marque também em Recebidas/CT-e antes de gerar.</p>
             )}
 
-            {erro && <p className="text-[12px] text-red-500">{erro}</p>}
+            {erro && <p className="text-[12px] text-danger">{erro}</p>}
             {carregando ? (
                 <p className="text-[12px] text-gray-400 italic">Carregando...</p>
             ) : (
                 <div className="flex flex-col gap-4">
-                    <ColunaCfop titulo="Entrada" icon="trending-down" cor="text-emerald-600 dark:text-emerald-400" linhas={entrada} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} />
-                    <ColunaCfop titulo="Saída" icon="trending-up" cor="text-blue-600 dark:text-blue-400" linhas={saida} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} />
+                    <ColunaCfop titulo="Entrada" icon="trending-down" cor="text-success" linhas={entrada} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} />
+                    <ColunaCfop titulo="Saída" icon="trending-up" cor="text-info" linhas={saida} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} />
                 </div>
             )}
         </div>

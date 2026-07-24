@@ -16,9 +16,9 @@ const CAMPOS_ARQUIVO = [
 ];
 
 const CORES = {
-    blue: 'border-blue-200 dark:border-blue-500/30 bg-blue-50/40 dark:bg-blue-500/5 text-blue-600 dark:text-blue-400',
-    emerald: 'border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-500/5 text-emerald-600 dark:text-emerald-400',
-    orange: 'border-orange-200 dark:border-orange-500/30 bg-orange-50/40 dark:bg-orange-500/5 text-orange-600 dark:text-orange-400',
+    blue: 'border-info/30 dark:border-info/40 bg-info/10 dark:bg-info/5 text-info',
+    emerald: 'border-success/30 dark:border-success/40 bg-success/10 dark:bg-success/5 text-success',
+    orange: 'border-warning/40 dark:border-warning/40 bg-warning/10 dark:bg-warning/5 text-warning',
 };
 
 function CampoArquivo({ campo, arquivo, onEscolher, desabilitado }) {
@@ -26,23 +26,23 @@ function CampoArquivo({ campo, arquivo, onEscolher, desabilitado }) {
     const selecionado = !!arquivo;
 
     return (
-        <div className={`relative rounded-xl border-2 p-5 flex flex-col items-center text-center gap-2.5 transition ${selecionado ? 'border-solid border-emerald-400 dark:border-emerald-500/50 bg-emerald-50/60 dark:bg-emerald-500/10' : `border-dashed ${CORES[campo.cor]}`} ${desabilitado ? 'opacity-60' : ''}`}>
+        <div className={`relative rounded-xl border-2 p-5 flex flex-col items-center text-center gap-2.5 transition ${selecionado ? 'border-solid border-success dark:border-success/60 bg-success/10 dark:bg-success/15' : `border-dashed ${CORES[campo.cor]}`} ${desabilitado ? 'opacity-60' : ''}`}>
             {selecionado && (
-                <span className="absolute -top-2.5 -right-2.5 bg-emerald-500 text-white rounded-full p-1 shadow-sm">
+                <span className="absolute -top-2.5 -right-2.5 bg-success text-white rounded-full p-1 shadow-sm">
                     <Icon name="check-circle" className="w-4 h-4" />
                 </span>
             )}
-            <Icon name={selecionado ? 'check-circle' : campo.icon} className={`w-6 h-6 ${selecionado ? 'text-emerald-600 dark:text-emerald-400' : ''}`} />
+            <Icon name={selecionado ? 'check-circle' : campo.icon} className={`w-6 h-6 ${selecionado ? 'text-success' : ''}`} />
             <h4 className="font-bold text-[13px] text-gray-800 dark:text-white">{campo.label}</h4>
             <input ref={inputRef} type="file" accept=".xlsx" className="hidden" onChange={e => onEscolher(campo.key, e.target.files?.[0] || null)} />
             {selecionado ? (
                 <>
-                    <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 break-all leading-snug">{arquivo.name}</p>
+                    <p className="text-[11px] font-semibold text-success break-all leading-snug">{arquivo.name}</p>
                     <div className="flex gap-2">
                         <button type="button" disabled={desabilitado} onClick={() => inputRef.current?.click()} className="px-2.5 py-1 text-[10px] font-semibold bg-white dark:bg-darkCard border border-gray-200 dark:border-darkBorder rounded-md shadow-sm hover:shadow transition disabled:opacity-50">
                             Trocar
                         </button>
-                        <button type="button" disabled={desabilitado} onClick={() => onEscolher(campo.key, null)} className="px-2.5 py-1 text-[10px] font-semibold text-red-500 bg-white dark:bg-darkCard border border-gray-200 dark:border-darkBorder rounded-md shadow-sm hover:shadow transition disabled:opacity-50">
+                        <button type="button" disabled={desabilitado} onClick={() => onEscolher(campo.key, null)} className="px-2.5 py-1 text-[10px] font-semibold text-danger bg-white dark:bg-darkCard border border-gray-200 dark:border-darkBorder rounded-md shadow-sm hover:shadow transition disabled:opacity-50">
                             Remover
                         </button>
                     </div>
@@ -127,7 +127,7 @@ export default function UploadTab() {
                     >
                         <Icon name="upload" className="w-3.5 h-3.5" /> {uploadEmAndamento ? 'Enviando...' : 'Enviar as 3 planilhas'}
                     </button>
-                    <span className={`text-[11px] font-semibold ${todosSelecionados ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400'}`}>
+                    <span className={`text-[11px] font-semibold ${todosSelecionados ? 'text-success' : 'text-gray-400'}`}>
                         {qtdSelecionados} de 3 arquivos selecionados
                     </span>
                 </div>
@@ -161,9 +161,9 @@ export default function UploadTab() {
                                     <td className="px-4 py-2.5 text-gray-500 dark:text-gray-400">{b.ano ? `${formatarMesAnoAbrev(b.ano, b.mes)} · ${b.tipo_calculo === 'previa' ? 'Prévia' : 'Fechamento'}` : '—'}</td>
                                     <td className="px-4 py-2.5 text-right text-gray-700 dark:text-gray-300">{b.linhas_processadas}{b.linhas_erro > 0 ? ` (${b.linhas_erro} erro)` : ''}</td>
                                     <td className="px-4 py-2.5">
-                                        {b.status === 'concluido' && <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold"><Icon name="check-circle" className="w-3.5 h-3.5" /> Concluído</span>}
-                                        {b.status === 'erro' && <span className="inline-flex items-center gap-1 text-red-500 font-semibold" title={b.erro_detalhe}><Icon name="x-circle" className="w-3.5 h-3.5" /> Erro</span>}
-                                        {b.status === 'processando' && <span className="inline-flex items-center gap-1 text-amber-500 font-semibold"><Icon name="clock" className="w-3.5 h-3.5" /> Processando</span>}
+                                        {b.status === 'concluido' && <span className="inline-flex items-center gap-1 text-success font-semibold"><Icon name="check-circle" className="w-3.5 h-3.5" /> Concluído</span>}
+                                        {b.status === 'erro' && <span className="inline-flex items-center gap-1 text-danger font-semibold" title={b.erro_detalhe}><Icon name="x-circle" className="w-3.5 h-3.5" /> Erro</span>}
+                                        {b.status === 'processando' && <span className="inline-flex items-center gap-1 text-warning font-semibold"><Icon name="clock" className="w-3.5 h-3.5" /> Processando</span>}
                                     </td>
                                     <td className="px-4 py-2.5 text-gray-500 dark:text-gray-400">{new Date(b.created_at).toLocaleString('pt-BR')}</td>
                                 </tr>

@@ -38,8 +38,8 @@ export default function DashboardTab() {
         { label: 'Itens Cancelados', valor: resumo.canceladas, icon: 'x-circle', cor: 'red' },
     ];
     const coresCard = {
-        emerald: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-        red: 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400',
+        emerald: 'bg-success/10 dark:bg-success/15 text-success',
+        red: 'bg-danger/10 dark:bg-danger/15 text-danger',
     };
 
     return (

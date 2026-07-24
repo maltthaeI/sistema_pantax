@@ -19,7 +19,7 @@ function Bloco({ titulo, aliquota, debito, credito, resultado }) {
             </div>
             <div className="bg-white dark:bg-darkCard p-5 rounded-xl border border-gray-200 dark:border-darkBorder shadow-sm">
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Resultado (Débito − Crédito)</span>
-                <h2 className={`text-xl font-black ${aPagar ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                <h2 className={`text-xl font-black ${aPagar ? 'text-danger' : 'text-success'}`}>
                     R$ {formatarValorFinanceiro(Math.abs(resultado))} {aPagar ? '(a pagar)' : '(credor)'}
                 </h2>
             </div>
