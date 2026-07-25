@@ -6,7 +6,7 @@ import { formatarValorFinanceiro, formatarMoeda, moedaParaNumero } from '@/lib/u
 function Painel({ titulo, icon, cor, children }) {
     return (
         <div className="bg-white dark:bg-darkCard border border-gray-200 dark:border-darkBorder rounded-xl overflow-hidden flex flex-col">
-            <div className="px-5 py-3.5 flex items-center gap-2 border-b border-gray-100 dark:border-darkBorder">
+            <div className="px-5 py-3.5 flex items-center gap-2 border-b border-dashed border-gray-200 dark:border-darkBorder">
                 <span className={`p-1.5 rounded-md ${cor}`}><Icon name={icon} className="w-4 h-4" /></span>
                 <h3 className="text-[12px] font-bold text-gray-800 dark:text-white uppercase tracking-wide">{titulo}</h3>
             </div>

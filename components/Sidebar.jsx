@@ -26,7 +26,7 @@ export default function Sidebar() {
             )}
 
             <aside
-                className={`fixed inset-y-0 left-0 z-50 w-64 shrink-0 bg-darkCard flex flex-col transition-transform duration-200 ease-out no-print lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${sidebarMobileAberto ? 'translate-x-0' : '-translate-x-full'}`}
+                className={`fixed inset-y-0 left-0 z-50 w-64 shrink-0 bg-darkCard border-r border-white/10 flex flex-col transition-transform duration-200 ease-out no-print lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${sidebarMobileAberto ? 'translate-x-0' : '-translate-x-full'}`}
             >
                 <div className="h-16 flex items-center gap-3 px-5 border-b border-white/10 shrink-0">
                     <div className="h-8 w-8 rounded-lg bg-brand text-white flex items-center justify-center font-black text-sm shrink-0">P</div>

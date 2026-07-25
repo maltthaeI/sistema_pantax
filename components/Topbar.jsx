@@ -33,7 +33,7 @@ export default function Topbar() {
                             options={opcoesEmpresa}
                             placeholder="Selecione a empresa"
                             pesquisavel
-                            className="bg-gray-50 dark:bg-darkElevated border border-gray-200 dark:border-darkBorder rounded-md px-3 py-2 text-[12px] font-semibold outline-none"
+                            className="bg-gray-50 dark:bg-darkElevated border border-gray-200 dark:border-darkBorder text-[12px] font-semibold"
                         />
                     </div>
                     <div className="w-full max-w-[190px]">

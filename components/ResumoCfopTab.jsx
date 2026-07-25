@@ -24,13 +24,13 @@ function ColunaCfop({ titulo, icon, cor, linhas, selecionados, onToggle, onToggl
                     <thead>
                         <tr className="text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                             {selecionavel && (
-                                <th className="pl-8 pr-1 py-3 font-semibold w-8 whitespace-nowrap text-center">
+                                <th className="pl-8 pr-1 py-3 font-bold w-8 whitespace-nowrap text-center">
                                     <input type="checkbox" checked={todosSelecionados} onChange={e => onToggleTodos(linhas, e.target.checked)} className="accent-brand" />
                                 </th>
                             )}
-                            <th className={`${selecionavel ? 'pl-1' : 'pl-12'} pr-12 py-3 font-semibold whitespace-nowrap text-center`}>CFOP</th>
+                            <th className={`${selecionavel ? 'pl-1' : 'pl-12'} pr-12 py-3 font-bold whitespace-nowrap text-center`}>CFOP</th>
                             {colunas.map(c => (
-                                <th key={c.campo} className="px-12 py-3 font-semibold whitespace-nowrap text-center">{c.label}</th>
+                                <th key={c.campo} className="px-12 py-3 font-bold whitespace-nowrap text-center">{c.label}</th>
                             ))}
                         </tr>
                     </thead>

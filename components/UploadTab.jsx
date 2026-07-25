@@ -143,11 +143,11 @@ export default function UploadTab() {
                     <table className="w-full text-[12px] tabela-listrada">
                         <thead>
                             <tr className="text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                                <th className="px-12 py-3 font-semibold whitespace-nowrap text-center">Arquivos</th>
-                                <th className="px-12 py-3 font-semibold whitespace-nowrap text-center">Competência</th>
-                                <th className="px-12 py-3 font-semibold whitespace-nowrap text-center">Linhas</th>
-                                <th className="px-12 py-3 font-semibold whitespace-nowrap text-center">Status</th>
-                                <th className="px-12 py-3 font-semibold whitespace-nowrap text-center">Data</th>
+                                <th className="px-12 py-3 font-bold whitespace-nowrap text-center">Arquivos</th>
+                                <th className="px-12 py-3 font-bold whitespace-nowrap text-center">Competência</th>
+                                <th className="px-12 py-3 font-bold whitespace-nowrap text-center">Linhas</th>
+                                <th className="px-12 py-3 font-bold whitespace-nowrap text-center">Status</th>
+                                <th className="px-12 py-3 font-bold whitespace-nowrap text-center">Data</th>
                             </tr>
                         </thead>
                         <tbody>
