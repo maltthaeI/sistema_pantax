@@ -26,7 +26,7 @@
   --color-darkText: #aab8c5;
   --color-darkMuted: #8391a2;
 
-  --font-sans: var(--font-montserrat), sans-serif;
+  --font-sans: var(--font-hanken-grotesk), sans-serif;
 }
 
 @custom-variant dark (&:is(.dark *));
@@ -103,4 +103,37 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
     .animate-modal-backdrop, .animate-modal-in { animation: none; }
     .cube-grid .cube { animation: none; opacity: 0.6; }
+}
+
+/* ---- Tabelas: linha divisória + faixa zebrada recuadas das laterais,
+   alinhadas uma com a outra. Recuo (--tabela-recuo) é maior que o padding
+   das células (px-4 = 16px) de propósito, pra sobrar respiro entre o texto e
+   o fim da cor — se ficarem iguais o texto encosta na borda da faixa. Usa
+   background-image (não border nem position:relative+::before) porque isso
+   não mexe no cálculo de largura das colunas do <table> — position:relative
+   num <tr> quebra esse cálculo em alguns navegadores. Aplicar a classe
+   "tabela-listrada" no <table>. ---- */
+.tabela-listrada {
+    --tabela-recuo: 16px;
+}
+.tabela-listrada tbody > tr {
+    background-repeat: no-repeat;
+    background-position: top;
+    background-size: 100% 1px;
+    background-image: linear-gradient(to right, transparent 0, transparent var(--tabela-recuo), var(--color-gray-100) var(--tabela-recuo), var(--color-gray-100) calc(100% - var(--tabela-recuo)), transparent calc(100% - var(--tabela-recuo)), transparent 100%);
+}
+.dark .tabela-listrada tbody > tr {
+    background-image: linear-gradient(to right, transparent 0, transparent var(--tabela-recuo), var(--color-darkBorder) var(--tabela-recuo), var(--color-darkBorder) calc(100% - var(--tabela-recuo)), transparent calc(100% - var(--tabela-recuo)), transparent 100%);
+}
+.tabela-listrada tbody > tr:nth-child(even) {
+    background-size: 100% 1px, 100% 100%;
+    background-repeat: no-repeat, no-repeat;
+    background-image:
+        linear-gradient(to right, transparent 0, transparent var(--tabela-recuo), var(--color-gray-100) var(--tabela-recuo), var(--color-gray-100) calc(100% - var(--tabela-recuo)), transparent calc(100% - var(--tabela-recuo)), transparent 100%),
+        linear-gradient(to right, transparent 0, transparent var(--tabela-recuo), var(--color-gray-50) var(--tabela-recuo), var(--color-gray-50) calc(100% - var(--tabela-recuo)), transparent calc(100% - var(--tabela-recuo)), transparent 100%);
+}
+.dark .tabela-listrada tbody > tr:nth-child(even) {
+    background-image:
+        linear-gradient(to right, transparent 0, transparent var(--tabela-recuo), var(--color-darkBorder) var(--tabela-recuo), var(--color-darkBorder) calc(100% - var(--tabela-recuo)), transparent calc(100% - var(--tabela-recuo)), transparent 100%),
+        linear-gradient(to right, transparent 0, transparent var(--tabela-recuo), var(--color-darkElevated) var(--tabela-recuo), var(--color-darkElevated) calc(100% - var(--tabela-recuo)), transparent calc(100% - var(--tabela-recuo)), transparent 100%);
 }

@@ -4,49 +4,52 @@ import { useAppContext, supabase } from '@/context/AppContext';
 import Icon from '@/components/Icon';
 import { formatarValorFinanceiro, formatarMesAnoAbrev, chaveLinhaCfop } from '@/lib/utils';
 
-function ColunaCfop({ titulo, icon, cor, linhas, selecionados, onToggle, onToggleTodos, colunaExtra }) {
+// selecionavel=false esconde a coluna de checkbox inteira (Recebidas/CT-e não
+// restringem mais o crédito por seleção — ver AppContext.gerarApuracao).
+function ColunaCfop({ titulo, icon, cor, linhas, selecionados, onToggle, onToggleTodos, colunas, selecionavel = true }) {
     const somar = (campo) => linhas.reduce((soma, l) => soma + (l[campo] || 0), 0);
-    const todosSelecionados = linhas.length > 0 && linhas.every(l => selecionados.has(chaveLinhaCfop(l)));
+    const todosSelecionados = selecionavel && linhas.length > 0 && linhas.every(l => selecionados.has(chaveLinhaCfop(l)));
+    const colSpanVazio = colunas.length + 1 + (selecionavel ? 1 : 0);
 
     return (
         <div className="bg-white dark:bg-darkCard border border-gray-200 dark:border-darkBorder rounded-xl overflow-hidden">
-            <div className={`px-4 py-3 flex items-center justify-between border-b border-gray-100 dark:border-darkBorder ${cor}`}>
+            <div className={`px-4 py-6 flex items-center justify-between border-b border-dashed border-gray-200 dark:border-darkBorder ${cor}`}>
                 <span className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-wide">
                     <Icon name={icon} className="w-4 h-4" /> {titulo}
                 </span>
                 <span className="text-[11px] font-semibold opacity-80">{linhas.length} CFOP(s)</span>
             </div>
             <div className="overflow-x-auto">
-                <table className="w-full text-[12px]">
+                <table className="w-full text-[12px] tabela-listrada">
                     <thead>
                         <tr className="bg-gray-50 dark:bg-darkElevated text-gray-500 dark:text-gray-400 text-left">
-                            <th className="px-4 py-2 font-semibold w-8">
-                                <input type="checkbox" checked={todosSelecionados} onChange={e => onToggleTodos(linhas, e.target.checked)} className="accent-brand" />
-                            </th>
-                            <th className="px-4 py-2 font-semibold">CFOP</th>
-                            <th className="px-4 py-2 font-semibold text-right">Valor Total</th>
-                            <th className="px-4 py-2 font-semibold text-right">Valor do IPI</th>
-                            <th className="px-4 py-2 font-semibold text-right">Valor do ICMS</th>
-                            <th className="px-4 py-2 font-semibold text-right">Valor do ICMS ST</th>
-                            <th className="px-4 py-2 font-semibold text-right">{colunaExtra.label}</th>
+                            {selecionavel && (
+                                <th className="px-8 py-3 font-semibold w-8">
+                                    <input type="checkbox" checked={todosSelecionados} onChange={e => onToggleTodos(linhas, e.target.checked)} className="accent-brand" />
+                                </th>
+                            )}
+                            <th className="px-8 py-3 font-semibold">CFOP</th>
+                            {colunas.map(c => (
+                                <th key={c.campo} className="px-8 py-3 font-semibold text-right">{c.label}</th>
+                            ))}
                         </tr>
                     </thead>
                     <tbody>
                         {linhas.length === 0 ? (
-                            <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-400 italic">Nenhum CFOP encontrado.</td></tr>
+                            <tr><td colSpan={colSpanVazio} className="px-8 py-6 text-center text-gray-400 italic">Nenhum CFOP encontrado.</td></tr>
                         ) : linhas.map(l => {
                             const chave = chaveLinhaCfop(l);
                             return (
-                                <tr key={chave} className="border-t border-gray-100 dark:border-darkBorder">
-                                    <td className="px-4 py-2">
-                                        <input type="checkbox" checked={selecionados.has(chave)} onChange={() => onToggle(chave)} className="accent-brand" />
-                                    </td>
-                                    <td className="px-4 py-2 font-medium text-gray-800 dark:text-white">{l.cfop}</td>
-                                    <td className="px-4 py-2 text-right text-gray-700 dark:text-gray-300">R$ {formatarValorFinanceiro(l.valor_total)}</td>
-                                    <td className="px-4 py-2 text-right text-gray-700 dark:text-gray-300">R$ {formatarValorFinanceiro(l.valor_ipi)}</td>
-                                    <td className="px-4 py-2 text-right text-gray-700 dark:text-gray-300">R$ {formatarValorFinanceiro(l.valor_icms)}</td>
-                                    <td className="px-4 py-2 text-right text-gray-700 dark:text-gray-300">R$ {formatarValorFinanceiro(l.valor_icms_st)}</td>
-                                    <td className="px-4 py-2 text-right text-gray-700 dark:text-gray-300">R$ {formatarValorFinanceiro(l[colunaExtra.campo])}</td>
+                                <tr key={chave}>
+                                    {selecionavel && (
+                                        <td className="px-8 py-3">
+                                            <input type="checkbox" checked={selecionados.has(chave)} onChange={() => onToggle(chave)} className="accent-brand" />
+                                        </td>
+                                    )}
+                                    <td className="px-8 py-3 font-medium text-gray-800 dark:text-white">{l.cfop}</td>
+                                    {colunas.map(c => (
+                                        <td key={c.campo} className="px-8 py-3 text-right text-gray-700 dark:text-gray-300">R$ {formatarValorFinanceiro(l[c.campo])}</td>
+                                    ))}
                                 </tr>
                             );
                         })}
@@ -54,13 +57,11 @@ function ColunaCfop({ titulo, icon, cor, linhas, selecionados, onToggle, onToggl
                     {linhas.length > 0 && (
                         <tfoot>
                             <tr className="border-t border-gray-200 dark:border-darkBorder font-bold">
-                                <td className="px-4 py-2"></td>
-                                <td className="px-4 py-2 text-gray-800 dark:text-white">Total</td>
-                                <td className="px-4 py-2 text-right text-gray-900 dark:text-white">R$ {formatarValorFinanceiro(somar('valor_total'))}</td>
-                                <td className="px-4 py-2 text-right text-gray-900 dark:text-white">R$ {formatarValorFinanceiro(somar('valor_ipi'))}</td>
-                                <td className="px-4 py-2 text-right text-gray-900 dark:text-white">R$ {formatarValorFinanceiro(somar('valor_icms'))}</td>
-                                <td className="px-4 py-2 text-right text-gray-900 dark:text-white">R$ {formatarValorFinanceiro(somar('valor_icms_st'))}</td>
-                                <td className="px-4 py-2 text-right text-gray-900 dark:text-white">R$ {formatarValorFinanceiro(somar(colunaExtra.campo))}</td>
+                                {selecionavel && <td className="px-8 py-3.5"></td>}
+                                <td className="px-8 py-3.5 text-gray-800 dark:text-white">Total</td>
+                                {colunas.map(c => (
+                                    <td key={c.campo} className="px-8 py-3.5 text-right text-gray-900 dark:text-white">R$ {formatarValorFinanceiro(somar(c.campo))}</td>
+                                ))}
                             </tr>
                         </tfoot>
                     )}
@@ -69,6 +70,29 @@ function ColunaCfop({ titulo, icon, cor, linhas, selecionados, onToggle, onToggl
         </div>
     );
 }
+
+// Colunas exibidas em cada tela — mesmos campos gravados no banco pras 3
+// origens, só a ordem/seleção muda (CT-e não usa IPI/ICMS ST/coluna extra).
+const COLUNAS_POR_ORIGEM = {
+    emitidas: [
+        { label: 'Valor Total', campo: 'valor_total' },
+        { label: 'Valor do ICMS', campo: 'valor_icms' },
+        { label: 'Valor do ICMS ST', campo: 'valor_icms_st' },
+        { label: 'Valor do IPI', campo: 'valor_ipi' },
+        { label: 'ICMS UF Destino', campo: 'valor_icms_uf_destino' },
+    ],
+    recebidas: [
+        { label: 'Valor Total', campo: 'valor_total' },
+        { label: 'Valor do ICMS', campo: 'valor_icms' },
+        { label: 'Valor do ICMS ST', campo: 'valor_icms_st' },
+        { label: 'Valor do IPI', campo: 'valor_ipi' },
+        { label: 'ICMS Simples Nacional', campo: 'valor_icms_simples_nacional' },
+    ],
+    cte: [
+        { label: 'Valor do Frete', campo: 'valor_total' },
+        { label: 'Valor do ICMS', campo: 'valor_icms' },
+    ],
+};
 
 // origem: 'emitidas' | 'recebidas' | 'cte' — cada tela mostra só os CFOPs
 // daquela planilha. Emitidas ganha o botão "Gerar Apuração", que lê a seleção
@@ -117,21 +141,24 @@ export default function ResumoCfopTab({ origem, titulo, mostrarGerar = false }) 
     }
 
     const selecionados = selecoesCfop[origem];
+    // Só Emitidas tem checkbox de seleção (débito + restringir devolução). Todo
+    // CFOP Autorizado de Recebidas/CT-e entra automaticamente no crédito.
+    const selecionavel = origem === 'emitidas';
     // Recebidas separa por Categoria da planilha (Revenda x Uso e Consumo);
-    // Emitidas/CT-e continuam separando por cfop_direcao (Entrada x Saída).
+    // Emitidas separa por cfop_direcao (Entrada x Saída); CT-e é uma tabela
+    // única (só CFOPs Autorizados, já filtrado na agregação do import).
     const porCategoria = origem === 'recebidas';
-    const grupoA = porCategoria ? linhas.filter(l => l.categoria === 'revenda') : linhas.filter(l => l.cfop_direcao === 'entrada');
-    const grupoB = porCategoria ? linhas.filter(l => l.categoria === 'uso_consumo') : linhas.filter(l => l.cfop_direcao === 'saida');
+    const tabelaUnica = origem === 'cte';
+    const grupoA = porCategoria ? linhas.filter(l => l.categoria === 'revenda') : !tabelaUnica ? linhas.filter(l => l.cfop_direcao === 'entrada') : [];
+    const grupoB = porCategoria ? linhas.filter(l => l.categoria === 'uso_consumo') : !tabelaUnica ? linhas.filter(l => l.cfop_direcao === 'saida') : [];
     const semCategoria = porCategoria ? linhas.filter(l => l.categoria !== 'revenda' && l.categoria !== 'uso_consumo') : [];
-    const colunaExtra = porCategoria
-        ? { label: 'ICMS Simples Nacional', campo: 'valor_icms_simples_nacional' }
-        : { label: 'ICMS UF Destino', campo: 'valor_icms_uf_destino' };
+    const colunas = COLUNAS_POR_ORIGEM[origem];
     const toggle = (chave) => alternarSelecaoCfop(origem, chave);
     const toggleTodos = (linhasGrupo, marcar) => alternarTodosSelecaoCfop(origem, linhasGrupo.map(chaveLinhaCfop), marcar);
     const nadaSelecionado = selecionados.size === 0;
 
     return (
-        <div className="p-6 max-w-6xl mx-auto flex flex-col gap-6">
+        <div className="p-6 max-w-[1600px] flex flex-col gap-6">
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-2">
                     <span className="w-1 h-3.5 bg-brand rounded-full"></span>
@@ -151,29 +178,35 @@ export default function ResumoCfopTab({ origem, titulo, mostrarGerar = false }) 
                 )}
             </div>
             {mostrarGerar && nadaSelecionado && (
-                <p className="text-[11px] text-gray-400 -mt-4">Marque os CFOPs de débito aqui em Emitidas e, se quiser restringir o crédito, marque também em Recebidas/CT-e antes de gerar.</p>
+                <p className="text-[11px] text-gray-400 -mt-4">Marque os CFOPs de débito aqui em Emitidas antes de gerar — Recebidas e CT-e entram automaticamente com todos os CFOPs Autorizados.</p>
             )}
 
             {erro && <p className="text-[12px] text-danger">{erro}</p>}
             {carregando ? (
                 <p className="text-[12px] text-gray-400 italic">Carregando...</p>
             ) : (
-                <div className="flex flex-col gap-4">
-                    {porCategoria ? (
-                        <>
-                            <ColunaCfop titulo="Revenda" icon="trending-down" cor="text-success" linhas={grupoA} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} colunaExtra={colunaExtra} />
-                            <ColunaCfop titulo="Uso e Consumo" icon="trending-up" cor="text-info" linhas={grupoB} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} colunaExtra={colunaExtra} />
-                            {semCategoria.length > 0 && (
-                                <ColunaCfop titulo="Sem Categoria" icon="alert-triangle" cor="text-gray-500" linhas={semCategoria} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} colunaExtra={colunaExtra} />
-                            )}
-                        </>
-                    ) : (
-                        <>
-                            <ColunaCfop titulo="Entrada" icon="trending-down" cor="text-success" linhas={grupoA} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} colunaExtra={colunaExtra} />
-                            <ColunaCfop titulo="Saída" icon="trending-up" cor="text-info" linhas={grupoB} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} colunaExtra={colunaExtra} />
-                        </>
-                    )}
-                </div>
+                tabelaUnica ? (
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
+                        <ColunaCfop titulo="CTEs Recebidos" icon="truck" cor="text-info" linhas={linhas} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} colunas={colunas} selecionavel={selecionavel} />
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
+                        {porCategoria ? (
+                            <>
+                                <ColunaCfop titulo="Revenda" icon="trending-down" cor="text-success" linhas={grupoA} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} colunas={colunas} selecionavel={selecionavel} />
+                                <ColunaCfop titulo="Uso e Consumo" icon="trending-up" cor="text-info" linhas={grupoB} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} colunas={colunas} selecionavel={selecionavel} />
+                                {semCategoria.length > 0 && (
+                                    <ColunaCfop titulo="Sem Categoria" icon="alert-triangle" cor="text-gray-500" linhas={semCategoria} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} colunas={colunas} selecionavel={selecionavel} />
+                                )}
+                            </>
+                        ) : (
+                            <>
+                                <ColunaCfop titulo="Entrada" icon="trending-down" cor="text-success" linhas={grupoA} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} colunas={colunas} selecionavel={selecionavel} />
+                                <ColunaCfop titulo="Saída" icon="trending-up" cor="text-info" linhas={grupoB} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} colunas={colunas} selecionavel={selecionavel} />
+                            </>
+                        )}
+                    </div>
+                )
             )}
         </div>
     );

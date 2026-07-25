@@ -2,15 +2,13 @@
 import { useAppContext } from '@/context/AppContext';
 import Icon from '@/components/Icon';
 import ResumoCfopTab from '@/components/ResumoCfopTab';
-import IcmsTab from '@/components/IcmsTab';
-import PisCofinsTab from '@/components/PisCofinsTab';
+import PreviaTab from '@/components/PreviaTab';
 
 const SUBABAS = [
     { key: 'emitidas', label: 'Emitidas', icon: 'trending-up' },
     { key: 'recebidas', label: 'Recebidas', icon: 'trending-down' },
     { key: 'cte', label: 'CT-e', icon: 'truck' },
-    { key: 'icms', label: 'ICMS', icon: 'dollar-sign' },
-    { key: 'pis_cofins', label: 'PIS/COFINS', icon: 'percent' },
+    { key: 'previa', label: 'Prévia', icon: 'dollar-sign' },
 ];
 
 export default function ResumoTab() {
@@ -34,8 +32,7 @@ export default function ResumoTab() {
             {resumoSubAba === 'emitidas' && <ResumoCfopTab origem="emitidas" titulo="Emitidas" mostrarGerar />}
             {resumoSubAba === 'recebidas' && <ResumoCfopTab origem="recebidas" titulo="Recebidas" />}
             {resumoSubAba === 'cte' && <ResumoCfopTab origem="cte" titulo="CT-e" />}
-            {resumoSubAba === 'icms' && <IcmsTab />}
-            {resumoSubAba === 'pis_cofins' && <PisCofinsTab />}
+            {resumoSubAba === 'previa' && <PreviaTab />}
         </div>
     );
 }

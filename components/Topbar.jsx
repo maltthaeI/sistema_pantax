@@ -25,13 +25,14 @@ export default function Topbar() {
                     <Icon name="menu" className="w-5 h-5" />
                 </button>
 
-                <div className="flex items-center gap-2 flex-1 justify-center max-w-xl">
+                <div className="flex items-center gap-2 flex-1 justify-start max-w-xl">
                     <div className="w-full max-w-[220px]">
                         <CustomSelect
                             value={empresaAtualId}
                             onChange={setEmpresaAtualId}
                             options={opcoesEmpresa}
                             placeholder="Selecione a empresa"
+                            pesquisavel
                             className="bg-gray-50 dark:bg-darkElevated border border-gray-200 dark:border-darkBorder rounded-md px-3 py-2 text-[12px] font-semibold outline-none"
                         />
                     </div>

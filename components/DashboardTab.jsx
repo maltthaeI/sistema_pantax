@@ -43,7 +43,7 @@ export default function DashboardTab() {
     };
 
     return (
-        <div className="p-6 max-w-4xl mx-auto flex flex-col gap-6">
+        <div className="p-6 max-w-4xl flex flex-col gap-6">
             <div className="flex items-center justify-between flex-wrap gap-2">
                 <div>
                     <h2 className="text-lg font-bold text-gray-900 dark:text-white">{empresaAtual.nome_fantasia || empresaAtual.razao_social}</h2>

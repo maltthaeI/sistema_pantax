@@ -17,7 +17,7 @@ export const AppProvider = ({ children }) => {
     const [erroLogin, setErroLogin] = useState('');
     const isAdmin = usuario?.nivel === 'Administrador';
 
-    const [darkMode, setDarkMode] = useState(false);
+    const [darkMode, setDarkMode] = useState(true);
     useEffect(() => {
         if (darkMode) document.documentElement.classList.add('dark');
         else document.documentElement.classList.remove('dark');
@@ -25,7 +25,7 @@ export const AppProvider = ({ children }) => {
     const toggleDarkMode = () => setDarkMode(!darkMode);
 
     const [abaAtual, setAbaAtual] = useState('dashboard');
-    // Submenu dentro da aba "Resumo": emitidas | recebidas | cte | icms | pis_cofins.
+    // Submenu dentro da aba "Resumo": emitidas | recebidas | cte | previa.
     const [resumoSubAba, setResumoSubAba] = useState('emitidas');
     // Drawer da sidebar em telas mobile (a sidebar fixa só aparece em lg+).
     const [sidebarMobileAberto, setSidebarMobileAberto] = useState(false);
@@ -77,6 +77,11 @@ export const AppProvider = ({ children }) => {
     const [apuracaoIcms, setApuracaoIcms] = useState(null);
     const [apuracaoPisCofins, setApuracaoPisCofins] = useState(null);
     const [gerandoApuracao, setGerandoApuracao] = useState(false);
+    // Estorno de Débito e Acumulado do ICMS: ajustes manuais, dígitos brutos de
+    // input mascarado (formatarMoeda/moedaParaNumero), zerados a cada "Gerar
+    // Apuração" e aplicados em tempo real no resultado (ver PreviaTab.CardEditavel).
+    const [estornoDebitoIcms, setEstornoDebitoIcms] = useState('');
+    const [acumuladoCreditoIcms, setAcumuladoCreditoIcms] = useState('');
 
     // Alíquotas do regime não-cumulativo (confirmadas contra planilha de
     // referência real — PIS/COFINS não é soma direta da planilha, é Base x Alíquota).
@@ -98,20 +103,30 @@ export const AppProvider = ({ children }) => {
             const linhasRecebidas = recebidas.data || [];
             const linhasCte = cte.data || [];
 
-            // direcaoFiltro opcional: só soma linhas selecionadas E daquela direção
-            // (Emitidas mistura vendas — saída — com devoluções de venda — entrada).
-            const somar = (linhas, origem, campo, direcaoFiltro = null) => linhas
-                .filter(l => selecoesCfop[origem].has(chaveLinhaCfop(l)))
+            // direcaoFiltro/categoriaFiltro opcionais: só soma linhas daquela
+            // direção/categoria (Emitidas mistura vendas — saída — com devoluções
+            // de venda — entrada; Recebidas mistura Revenda e Uso e Consumo).
+            //
+            // Seleção (checkbox) só existe em Emitidas (débito) — nada marcado ali
+            // significa débito zerado, de propósito, pra forçar a escolha. Recebidas
+            // e CT-e não têm checkbox: todo CFOP Autorizado entra no crédito.
+            const somar = (linhas, origem, campo, direcaoFiltro = null, categoriaFiltro = null) => linhas
+                .filter(l => origem !== 'emitidas' || selecoesCfop[origem].has(chaveLinhaCfop(l)))
                 .filter(l => !direcaoFiltro || l.cfop_direcao === direcaoFiltro)
+                .filter(l => !categoriaFiltro || l.categoria === categoriaFiltro)
                 .reduce((soma, l) => soma + (l[campo] || 0), 0);
 
-            // ==== ICMS: débito = saídas de Emitidas; crédito = devoluções (entrada
-            // em Emitidas) + Recebidas + CT-e, todas as direções ====
-            const debitoIcms = somar(linhasEmitidas, 'emitidas', 'valor_icms', 'saida');
-            const creditoIcms = somar(linhasEmitidas, 'emitidas', 'valor_icms', 'entrada')
-                + somar(linhasRecebidas, 'recebidas', 'valor_icms')
-                + somar(linhasCte, 'cte', 'valor_icms');
-            setApuracaoIcms({ debito: debitoIcms, credito: creditoIcms, resultado: debitoIcms - creditoIcms });
+            // ==== ICMS: Débito = Saídas NF-e (+ Estorno manual); Crédito =
+            // Devoluções (entrada em Emitidas) + NF-e Entrada (só Revenda em
+            // Recebidas) + CT-e (+ Acumulado manual) — Estorno/Acumulado entram
+            // na tela (PreviaTab), aqui só a parte calculada da planilha ====
+            const saidasNfe = somar(linhasEmitidas, 'emitidas', 'valor_icms', 'saida');
+            const devolucoes = somar(linhasEmitidas, 'emitidas', 'valor_icms', 'entrada');
+            const nfeEntrada = somar(linhasRecebidas, 'recebidas', 'valor_icms', null, 'revenda');
+            const creditoCte = somar(linhasCte, 'cte', 'valor_icms');
+            setApuracaoIcms({ saidasNfe, devolucoes, nfeEntrada, cte: creditoCte });
+            setEstornoDebitoIcms('');
+            setAcumuladoCreditoIcms('');
 
             // ==== PIS/COFINS: Base x Alíquota, não soma direta ====
             // Base débito = Valor Total das saídas - ICMS das saídas.
@@ -138,7 +153,7 @@ export const AppProvider = ({ children }) => {
             });
 
             setAbaAtual('resumo');
-            setResumoSubAba('icms');
+            setResumoSubAba('previa');
         } finally {
             setGerandoApuracao(false);
         }
@@ -404,6 +419,7 @@ export const AppProvider = ({ children }) => {
         importBatches, uploadEmAndamento, uploadRelatorioNfe, ultimaImportacaoEm,
         selecoesCfop, alternarSelecaoCfop, alternarTodosSelecaoCfop,
         apuracaoIcms, apuracaoPisCofins, gerandoApuracao, gerarApuracao,
+        estornoDebitoIcms, setEstornoDebitoIcms, acumuladoCreditoIcms, setAcumuladoCreditoIcms,
         usuariosSistema, modalUsuarioAberto, setModalUsuarioAberto, novoUsuario, setNovoUsuario, salvandoUsuario,
         abrirNovoUsuario, abrirEdicaoUsuario, salvarUsuario,
     };

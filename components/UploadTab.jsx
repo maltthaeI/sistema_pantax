@@ -78,7 +78,7 @@ export default function UploadTab() {
     };
 
     return (
-        <div className="p-6 max-w-5xl mx-auto flex flex-col gap-6">
+        <div className="p-6 max-w-5xl flex flex-col gap-6">
             <div className="flex items-center gap-2">
                 <span className="w-1 h-3.5 bg-brand rounded-full"></span>
                 <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Importar relatórios NF-e</h4>
@@ -140,32 +140,32 @@ export default function UploadTab() {
                     <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Histórico de importações</h4>
                 </div>
                 <div className="bg-white dark:bg-darkCard border border-gray-200 dark:border-darkBorder rounded-xl overflow-hidden">
-                    <table className="w-full text-[12px]">
+                    <table className="w-full text-[12px] tabela-listrada">
                         <thead>
                             <tr className="bg-gray-50 dark:bg-darkElevated text-gray-500 dark:text-gray-400 text-left">
-                                <th className="px-4 py-2.5 font-semibold">Arquivos</th>
-                                <th className="px-4 py-2.5 font-semibold">Competência</th>
-                                <th className="px-4 py-2.5 font-semibold text-right">Linhas</th>
-                                <th className="px-4 py-2.5 font-semibold">Status</th>
-                                <th className="px-4 py-2.5 font-semibold">Data</th>
+                                <th className="px-8 py-3 font-semibold">Arquivos</th>
+                                <th className="px-8 py-3 font-semibold">Competência</th>
+                                <th className="px-8 py-3 font-semibold text-right">Linhas</th>
+                                <th className="px-8 py-3 font-semibold">Status</th>
+                                <th className="px-8 py-3 font-semibold">Data</th>
                             </tr>
                         </thead>
                         <tbody>
                             {importBatches.length === 0 ? (
-                                <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400 italic">Nenhuma importação ainda.</td></tr>
+                                <tr><td colSpan={5} className="px-8 py-8 text-center text-gray-400 italic">Nenhuma importação ainda.</td></tr>
                             ) : importBatches.map(b => (
-                                <tr key={b.id} className="border-t border-gray-100 dark:border-darkBorder">
-                                    <td className="px-4 py-2.5 font-medium text-gray-800 dark:text-white truncate max-w-[260px]" title={[b.nome_arquivo_emitidas, b.nome_arquivo_recebidas, b.nome_arquivo_cte].filter(Boolean).join(', ')}>
+                                <tr key={b.id}>
+                                    <td className="px-8 py-3 font-medium text-gray-800 dark:text-white truncate max-w-[260px]" title={[b.nome_arquivo_emitidas, b.nome_arquivo_recebidas, b.nome_arquivo_cte].filter(Boolean).join(', ')}>
                                         {[b.nome_arquivo_emitidas, b.nome_arquivo_recebidas, b.nome_arquivo_cte].filter(Boolean).join(', ') || '—'}
                                     </td>
-                                    <td className="px-4 py-2.5 text-gray-500 dark:text-gray-400">{b.ano ? `${formatarMesAnoAbrev(b.ano, b.mes)} · ${b.tipo_calculo === 'previa' ? 'Prévia' : 'Fechamento'}` : '—'}</td>
-                                    <td className="px-4 py-2.5 text-right text-gray-700 dark:text-gray-300">{b.linhas_processadas}{b.linhas_erro > 0 ? ` (${b.linhas_erro} erro)` : ''}</td>
-                                    <td className="px-4 py-2.5">
+                                    <td className="px-8 py-3 text-gray-500 dark:text-gray-400">{b.ano ? `${formatarMesAnoAbrev(b.ano, b.mes)} · ${b.tipo_calculo === 'previa' ? 'Prévia' : 'Fechamento'}` : '—'}</td>
+                                    <td className="px-8 py-3 text-right text-gray-700 dark:text-gray-300">{b.linhas_processadas}{b.linhas_erro > 0 ? ` (${b.linhas_erro} erro)` : ''}</td>
+                                    <td className="px-8 py-3">
                                         {b.status === 'concluido' && <span className="inline-flex items-center gap-1 text-success font-semibold"><Icon name="check-circle" className="w-3.5 h-3.5" /> Concluído</span>}
                                         {b.status === 'erro' && <span className="inline-flex items-center gap-1 text-danger font-semibold" title={b.erro_detalhe}><Icon name="x-circle" className="w-3.5 h-3.5" /> Erro</span>}
                                         {b.status === 'processando' && <span className="inline-flex items-center gap-1 text-warning font-semibold"><Icon name="clock" className="w-3.5 h-3.5" /> Processando</span>}
                                     </td>
-                                    <td className="px-4 py-2.5 text-gray-500 dark:text-gray-400">{new Date(b.created_at).toLocaleString('pt-BR')}</td>
+                                    <td className="px-8 py-3 text-gray-500 dark:text-gray-400">{new Date(b.created_at).toLocaleString('pt-BR')}</td>
                                 </tr>
                             ))}
                         </tbody>
