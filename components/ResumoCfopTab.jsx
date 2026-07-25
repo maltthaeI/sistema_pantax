@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useAppContext, supabase } from '@/context/AppContext';
 import Icon from '@/components/Icon';
-import { formatarValorFinanceiro, formatarMesAnoAbrev, chaveLinhaCfop } from '@/lib/utils';
+import { formatarValorFinanceiro, formatarMesAnoAbrev, chaveLinhaCfop, ButtonSpinner } from '@/lib/utils';
 
 // selecionavel=false esconde a coluna de checkbox inteira (Recebidas/CT-e não
 // restringem mais o crédito por seleção — ver AppContext.gerarApuracao).
@@ -22,33 +22,38 @@ function ColunaCfop({ titulo, icon, cor, linhas, selecionados, onToggle, onToggl
             <div className="overflow-x-auto">
                 <table className="w-full text-[12px] tabela-listrada">
                     <thead>
-                        <tr className="bg-gray-50 dark:bg-darkElevated text-gray-500 dark:text-gray-400 text-left">
+                        <tr className="text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                             {selecionavel && (
-                                <th className="px-8 py-3 font-semibold w-8">
+                                <th className="pl-8 pr-1 py-3 font-semibold w-8 whitespace-nowrap text-center">
                                     <input type="checkbox" checked={todosSelecionados} onChange={e => onToggleTodos(linhas, e.target.checked)} className="accent-brand" />
                                 </th>
                             )}
-                            <th className="px-8 py-3 font-semibold">CFOP</th>
+                            <th className={`${selecionavel ? 'pl-1' : 'pl-12'} pr-12 py-3 font-semibold whitespace-nowrap text-center`}>CFOP</th>
                             {colunas.map(c => (
-                                <th key={c.campo} className="px-8 py-3 font-semibold text-right">{c.label}</th>
+                                <th key={c.campo} className="px-12 py-3 font-semibold whitespace-nowrap text-center">{c.label}</th>
                             ))}
                         </tr>
                     </thead>
                     <tbody>
                         {linhas.length === 0 ? (
-                            <tr><td colSpan={colSpanVazio} className="px-8 py-6 text-center text-gray-400 italic">Nenhum CFOP encontrado.</td></tr>
+                            <tr><td colSpan={colSpanVazio} className="px-12 py-6 text-center text-gray-400 italic">Nenhum CFOP encontrado.</td></tr>
                         ) : linhas.map(l => {
                             const chave = chaveLinhaCfop(l);
+                            const marcada = selecionados.has(chave);
                             return (
-                                <tr key={chave}>
+                                <tr
+                                    key={chave}
+                                    onClick={selecionavel ? () => onToggle(chave) : undefined}
+                                    className={selecionavel ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition' : ''}
+                                >
                                     {selecionavel && (
-                                        <td className="px-8 py-3">
-                                            <input type="checkbox" checked={selecionados.has(chave)} onChange={() => onToggle(chave)} className="accent-brand" />
+                                        <td className="pl-8 pr-1 py-3 whitespace-nowrap text-center">
+                                            <Icon name="check" className={`w-4 h-4 text-brand mx-auto ${marcada ? '' : 'invisible'}`} />
                                         </td>
                                     )}
-                                    <td className="px-8 py-3 font-medium text-gray-800 dark:text-white">{l.cfop}</td>
+                                    <td className={`${selecionavel ? 'pl-1' : 'pl-12'} pr-12 py-3 font-medium text-gray-800 dark:text-white whitespace-nowrap text-center`}>{l.cfop}</td>
                                     {colunas.map(c => (
-                                        <td key={c.campo} className="px-8 py-3 text-right text-gray-700 dark:text-gray-300">R$ {formatarValorFinanceiro(l[c.campo])}</td>
+                                        <td key={c.campo} className="px-12 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap text-center">R$ {formatarValorFinanceiro(l[c.campo])}</td>
                                     ))}
                                 </tr>
                             );
@@ -56,11 +61,11 @@ function ColunaCfop({ titulo, icon, cor, linhas, selecionados, onToggle, onToggl
                     </tbody>
                     {linhas.length > 0 && (
                         <tfoot>
-                            <tr className="border-t border-gray-200 dark:border-darkBorder font-bold">
-                                {selecionavel && <td className="px-8 py-3.5"></td>}
-                                <td className="px-8 py-3.5 text-gray-800 dark:text-white">Total</td>
+                            <tr className="font-bold">
+                                {selecionavel && <td className="pl-8 pr-1 py-3.5 whitespace-nowrap text-center"></td>}
+                                <td className={`${selecionavel ? 'pl-1' : 'pl-12'} pr-12 py-3.5 text-gray-800 dark:text-white whitespace-nowrap text-center`}>Total</td>
                                 {colunas.map(c => (
-                                    <td key={c.campo} className="px-8 py-3.5 text-right text-gray-900 dark:text-white">R$ {formatarValorFinanceiro(somar(c.campo))}</td>
+                                    <td key={c.campo} className="px-12 py-3.5 text-gray-900 dark:text-white whitespace-nowrap text-center">R$ {formatarValorFinanceiro(somar(c.campo))}</td>
                                 ))}
                             </tr>
                         </tfoot>
@@ -155,7 +160,6 @@ export default function ResumoCfopTab({ origem, titulo, mostrarGerar = false }) 
     const colunas = COLUNAS_POR_ORIGEM[origem];
     const toggle = (chave) => alternarSelecaoCfop(origem, chave);
     const toggleTodos = (linhasGrupo, marcar) => alternarTodosSelecaoCfop(origem, linhasGrupo.map(chaveLinhaCfop), marcar);
-    const nadaSelecionado = selecionados.size === 0;
 
     return (
         <div className="p-6 max-w-[1600px] flex flex-col gap-6">
@@ -173,11 +177,11 @@ export default function ResumoCfopTab({ origem, titulo, mostrarGerar = false }) 
                         onClick={gerarApuracao}
                         className="px-4 py-2 text-[12px] font-semibold bg-brand hover:bg-brandHover text-white rounded-md shadow-sm transition disabled:opacity-50 flex items-center gap-2"
                     >
-                        <Icon name="dollar-sign" className="w-3.5 h-3.5" /> {gerandoApuracao ? 'Gerando...' : 'Gerar Apuração'}
+                        {gerandoApuracao ? <ButtonSpinner /> : <Icon name="dollar-sign" className="w-3.5 h-3.5" />} {gerandoApuracao ? 'Gerando...' : 'Gerar Apuração'}
                     </button>
                 )}
             </div>
-            {mostrarGerar && nadaSelecionado && (
+            {mostrarGerar && (
                 <p className="text-[11px] text-gray-400 -mt-4">Marque os CFOPs de débito aqui em Emitidas antes de gerar — Recebidas e CT-e entram automaticamente com todos os CFOPs Autorizados.</p>
             )}
 
@@ -186,11 +190,11 @@ export default function ResumoCfopTab({ origem, titulo, mostrarGerar = false }) 
                 <p className="text-[12px] text-gray-400 italic">Carregando...</p>
             ) : (
                 tabelaUnica ? (
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
+                    <div className="flex flex-col gap-4">
                         <ColunaCfop titulo="CTEs Recebidos" icon="truck" cor="text-info" linhas={linhas} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} colunas={colunas} selecionavel={selecionavel} />
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
+                    <div className="flex flex-col gap-4">
                         {porCategoria ? (
                             <>
                                 <ColunaCfop titulo="Revenda" icon="trending-down" cor="text-success" linhas={grupoA} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} colunas={colunas} selecionavel={selecionavel} />

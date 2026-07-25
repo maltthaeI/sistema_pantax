@@ -114,25 +114,29 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
    num <tr> quebra esse cálculo em alguns navegadores. Aplicar a classe
    "tabela-listrada" no <table>. ---- */
 .tabela-listrada {
-    --tabela-recuo: 16px;
+    --tabela-recuo: 32px;
 }
-.tabela-listrada tbody > tr {
+.tabela-listrada tbody > tr,
+.tabela-listrada tfoot > tr {
     background-repeat: no-repeat;
     background-position: top;
     background-size: 100% 1px;
     background-image: linear-gradient(to right, transparent 0, transparent var(--tabela-recuo), var(--color-gray-100) var(--tabela-recuo), var(--color-gray-100) calc(100% - var(--tabela-recuo)), transparent calc(100% - var(--tabela-recuo)), transparent 100%);
 }
-.dark .tabela-listrada tbody > tr {
+.dark .tabela-listrada tbody > tr,
+.dark .tabela-listrada tfoot > tr {
     background-image: linear-gradient(to right, transparent 0, transparent var(--tabela-recuo), var(--color-darkBorder) var(--tabela-recuo), var(--color-darkBorder) calc(100% - var(--tabela-recuo)), transparent calc(100% - var(--tabela-recuo)), transparent 100%);
 }
-.tabela-listrada tbody > tr:nth-child(even) {
+/* Listrado começa na 1ª linha do tbody (thead conta como a "linha" anterior,
+   já com cor própria) — por isso é ímpar aqui, não par. */
+.tabela-listrada tbody > tr:nth-child(odd) {
     background-size: 100% 1px, 100% 100%;
     background-repeat: no-repeat, no-repeat;
     background-image:
         linear-gradient(to right, transparent 0, transparent var(--tabela-recuo), var(--color-gray-100) var(--tabela-recuo), var(--color-gray-100) calc(100% - var(--tabela-recuo)), transparent calc(100% - var(--tabela-recuo)), transparent 100%),
         linear-gradient(to right, transparent 0, transparent var(--tabela-recuo), var(--color-gray-50) var(--tabela-recuo), var(--color-gray-50) calc(100% - var(--tabela-recuo)), transparent calc(100% - var(--tabela-recuo)), transparent 100%);
 }
-.dark .tabela-listrada tbody > tr:nth-child(even) {
+.dark .tabela-listrada tbody > tr:nth-child(odd) {
     background-image:
         linear-gradient(to right, transparent 0, transparent var(--tabela-recuo), var(--color-darkBorder) var(--tabela-recuo), var(--color-darkBorder) calc(100% - var(--tabela-recuo)), transparent calc(100% - var(--tabela-recuo)), transparent 100%),
         linear-gradient(to right, transparent 0, transparent var(--tabela-recuo), var(--color-darkElevated) var(--tabela-recuo), var(--color-darkElevated) calc(100% - var(--tabela-recuo)), transparent calc(100% - var(--tabela-recuo)), transparent 100%);
