@@ -17,12 +17,8 @@ export const AppProvider = ({ children }) => {
     const [erroLogin, setErroLogin] = useState('');
     const isAdmin = usuario?.nivel === 'Administrador';
 
-    const [darkMode, setDarkMode] = useState(true);
-    useEffect(() => {
-        if (darkMode) document.documentElement.classList.add('dark');
-        else document.documentElement.classList.remove('dark');
-    }, [darkMode]);
-    const toggleDarkMode = () => setDarkMode(!darkMode);
+    // Tema único (escuro) — sem opção de troca pro usuário.
+    useEffect(() => { document.documentElement.classList.add('dark'); }, []);
 
     const [abaAtual, setAbaAtual] = useState('dashboard');
     // Submenu dentro da aba "Resumo": emitidas | recebidas | cte | previa.
@@ -103,27 +99,45 @@ export const AppProvider = ({ children }) => {
             const linhasRecebidas = recebidas.data || [];
             const linhasCte = cte.data || [];
 
-            // direcaoFiltro/categoriaFiltro opcionais: só soma linhas daquela
-            // direção/categoria (Emitidas mistura vendas — saída — com devoluções
-            // de venda — entrada; Recebidas mistura Revenda e Uso e Consumo).
-            //
-            // Seleção (checkbox) só existe em Emitidas (débito) — nada marcado ali
-            // significa débito zerado, de propósito, pra forçar a escolha. Recebidas
-            // e CT-e não têm checkbox: todo CFOP Autorizado entra no crédito.
-            const somar = (linhas, origem, campo, direcaoFiltro = null, categoriaFiltro = null) => linhas
-                .filter(l => origem !== 'emitidas' || selecoesCfop[origem].has(chaveLinhaCfop(l)))
-                .filter(l => !direcaoFiltro || l.cfop_direcao === direcaoFiltro)
-                .filter(l => !categoriaFiltro || l.categoria === categoriaFiltro)
-                .reduce((soma, l) => soma + (l[campo] || 0), 0);
+            // Um único reduce por planilha (em vez de somar campo a campo) —
+            // Emitidas separa por direção (saída/entrada, filtrando só linhas
+            // selecionadas — nada marcado ali zera o débito de propósito, pra
+            // forçar a escolha); Recebidas soma só a categoria Revenda (Uso e
+            // Consumo fica de fora do crédito); CT-e não tem filtro, entra tudo.
+            const acumuladorVazio = () => ({ total: 0, icms: 0, icmsSt: 0, ipi: 0 });
+            const acumular = (acc, l) => {
+                acc.total += l.valor_total || 0;
+                acc.icms += l.valor_icms || 0;
+                acc.icmsSt += l.valor_icms_st || 0;
+                acc.ipi += l.valor_ipi || 0;
+            };
+
+            const emitidas_ = linhasEmitidas.reduce((acc, l) => {
+                if (!selecoesCfop.emitidas.has(chaveLinhaCfop(l))) return acc;
+                if (l.cfop_direcao === 'saida') acumular(acc.saida, l);
+                else if (l.cfop_direcao === 'entrada') acumular(acc.entrada, l);
+                return acc;
+            }, { saida: acumuladorVazio(), entrada: acumuladorVazio() });
+
+            const revenda = linhasRecebidas.reduce((acc, l) => {
+                if (l.categoria === 'revenda') acumular(acc, l);
+                return acc;
+            }, acumuladorVazio());
+
+            const cteTotais = linhasCte.reduce((acc, l) => {
+                acc.total += l.valor_total || 0;
+                acc.icms += l.valor_icms || 0;
+                return acc;
+            }, { total: 0, icms: 0 });
 
             // ==== ICMS: Débito = Saídas NF-e (+ Estorno manual); Crédito =
             // Devoluções (entrada em Emitidas) + NF-e Entrada (só Revenda em
             // Recebidas) + CT-e (+ Acumulado manual) — Estorno/Acumulado entram
             // na tela (PreviaTab), aqui só a parte calculada da planilha ====
-            const saidasNfe = somar(linhasEmitidas, 'emitidas', 'valor_icms', 'saida');
-            const devolucoes = somar(linhasEmitidas, 'emitidas', 'valor_icms', 'entrada');
-            const nfeEntrada = somar(linhasRecebidas, 'recebidas', 'valor_icms', null, 'revenda');
-            const creditoCte = somar(linhasCte, 'cte', 'valor_icms');
+            const saidasNfe = emitidas_.saida.icms;
+            const devolucoes = emitidas_.entrada.icms;
+            const nfeEntrada = revenda.icms;
+            const creditoCte = cteTotais.icms;
             setApuracaoIcms({ saidasNfe, devolucoes, nfeEntrada, cte: creditoCte });
             setEstornoDebitoIcms('');
             setAcumuladoCreditoIcms('');
@@ -132,23 +146,19 @@ export const AppProvider = ({ children }) => {
             // Débito, igual ao ICMS: campo Saída (Valor Total das saídas
             // selecionadas em Emitidas) e campo ICMS (Valor ICMS das mesmas
             // saídas) — a base é a diferença entre os dois.
-            const debitoSaida = somar(linhasEmitidas, 'emitidas', 'valor_total', 'saida');
-            const debitoIcms = somar(linhasEmitidas, 'emitidas', 'valor_icms', 'saida');
+            const debitoSaida = emitidas_.saida.total;
+            const debitoIcms = emitidas_.saida.icms;
             const baseDebito = debitoSaida - debitoIcms;
 
             // Crédito, em 6 linhas: Compra Revenda/ICMS-ST-IPI (Recebidas, só
             // categoria Revenda), Frete/ICMS (CT-e) e Devolução Revenda/ICMS-ST-IPI
             // (entrada em Emitidas, só linhas selecionadas — mesma seleção do débito).
-            const compraRevenda = somar(linhasRecebidas, 'recebidas', 'valor_total', null, 'revenda');
-            const icmsStIpiRevenda = somar(linhasRecebidas, 'recebidas', 'valor_icms', null, 'revenda')
-                + somar(linhasRecebidas, 'recebidas', 'valor_icms_st', null, 'revenda')
-                + somar(linhasRecebidas, 'recebidas', 'valor_ipi', null, 'revenda');
-            const frete = somar(linhasCte, 'cte', 'valor_total');
-            const icmsCte = somar(linhasCte, 'cte', 'valor_icms');
-            const devolucaoRevenda = somar(linhasEmitidas, 'emitidas', 'valor_total', 'entrada');
-            const icmsStIpiEntrada = somar(linhasEmitidas, 'emitidas', 'valor_icms', 'entrada')
-                + somar(linhasEmitidas, 'emitidas', 'valor_icms_st', 'entrada')
-                + somar(linhasEmitidas, 'emitidas', 'valor_ipi', 'entrada');
+            const compraRevenda = revenda.total;
+            const icmsStIpiRevenda = revenda.icms + revenda.icmsSt + revenda.ipi;
+            const frete = cteTotais.total;
+            const icmsCte = cteTotais.icms;
+            const devolucaoRevenda = emitidas_.entrada.total;
+            const icmsStIpiEntrada = emitidas_.entrada.icms + emitidas_.entrada.icmsSt + emitidas_.entrada.ipi;
             const baseCredito = compraRevenda - icmsStIpiRevenda + frete - icmsCte + devolucaoRevenda - icmsStIpiEntrada;
 
             const debitoPis = baseDebito * ALIQUOTA_PIS;
@@ -432,7 +442,6 @@ export const AppProvider = ({ children }) => {
 
     const value = {
         isAdmin, usuario, setUsuario, logout,
-        darkMode, toggleDarkMode,
         abaAtual, setAbaAtual, resumoSubAba, setResumoSubAba,
         sidebarMobileAberto, setSidebarMobileAberto,
         empresas, empresaAtualId, setEmpresaAtualId, empresaAtual,

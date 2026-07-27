@@ -4,6 +4,29 @@ import { useAppContext } from '@/context/AppContext';
 import Icon from '@/components/Icon';
 import { formatarValorFinanceiro, formatarMoeda, moedaParaNumero } from '@/lib/utils';
 
+const ALIQUOTA_ICMS = 0.15;
+
+// Cor por tipo de campo (débito/crédito), com as variantes já resolvidas —
+// evita derivar "border-danger" a partir de "text-danger" em runtime (o
+// Tailwind só gera CSS pras classes que aparecem como string literal no
+// código, então essa derivação silenciosamente cai no fallback cinza).
+const CORES = {
+    debito: { texto: 'text-danger', borda: 'border-danger' },
+    credito: { texto: 'text-success', borda: 'border-success' },
+};
+
+// Estado de feedback (ícone vira check por 1.5s) compartilhado pelos botões
+// de copiar do Tile e do TileResultado.
+function useCopiar(texto) {
+    const [copiado, setCopiado] = useState(false);
+    async function copiar() {
+        await navigator.clipboard.writeText(texto);
+        setCopiado(true);
+        setTimeout(() => setCopiado(false), 1500);
+    }
+    return [copiado, copiar];
+}
+
 function Painel({ titulo, icon, cor, children }) {
     return (
         <div className="bg-white dark:bg-darkCard border border-gray-200 dark:border-darkBorder rounded-xl shadow-sm overflow-hidden flex flex-col">
@@ -25,14 +48,9 @@ function Subsecao({ titulo, cor, children }) {
     );
 }
 
-function Tile({ label, valor, cor, copiavel = false }) {
-    const [copiado, setCopiado] = useState(false);
-
-    async function copiar() {
-        await navigator.clipboard.writeText(`R$ ${formatarValorFinanceiro(valor)}`);
-        setCopiado(true);
-        setTimeout(() => setCopiado(false), 1500);
-    }
+function Tile({ label, valor, tipo, copiavel = false }) {
+    const cor = CORES[tipo];
+    const [copiado, copiar] = useCopiar(`R$ ${formatarValorFinanceiro(valor)}`);
 
     return (
         <div className="relative bg-gray-50 dark:bg-darkElevated rounded-lg p-3.5">
@@ -48,7 +66,7 @@ function Tile({ label, valor, cor, copiavel = false }) {
             )}
             <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 block mb-1">{label}</span>
             <h4 className="text-[15px] font-bold text-gray-800 dark:text-white">
-                <span className={cor || ''}>R$</span> {formatarValorFinanceiro(valor)}
+                <span className={cor?.texto || ''}>R$</span> {formatarValorFinanceiro(valor)}
             </h4>
         </div>
     );
@@ -56,23 +74,15 @@ function Tile({ label, valor, cor, copiavel = false }) {
 
 // Igual ao Tile, mas com um input mascarado em vez do valor — pros ajustes
 // manuais (Estorno de Débito / Acumulado) que recalculam o resultado na hora.
-// Mapa explícito (não dá pra derivar "border-danger" de "text-danger" via
-// replace() em runtime — o Tailwind só gera CSS pras classes que aparecem
-// como string literal no código, senão a borda cai no fallback cinza).
-const BORDA_POR_COR = {
-    'text-danger': 'border-danger',
-    'text-success': 'border-success',
-};
-
-function TileEditavel({ label, digitos, onChange, cor }) {
-    const corBorda = BORDA_POR_COR[cor] || 'border-gray-300 dark:border-darkBorder';
+function TileEditavel({ label, digitos, onChange, tipo }) {
+    const cor = CORES[tipo];
     return (
-        <div className={`bg-gray-50 dark:bg-darkElevated rounded-lg p-3.5 border border-dashed ${corBorda}`}>
+        <div className={`bg-gray-50 dark:bg-darkElevated rounded-lg p-3.5 border border-dashed ${cor?.borda || 'border-gray-300 dark:border-darkBorder'}`}>
             <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1 mb-1">
                 <Icon name="edit-3" className="w-3 h-3" /> {label}
             </span>
             <div className="flex items-center gap-1">
-                <span className={`text-[15px] font-bold ${cor || 'text-gray-400'}`}>R$</span>
+                <span className={`text-[15px] font-bold ${cor?.texto || 'text-gray-400'}`}>R$</span>
                 <input
                     type="text"
                     inputMode="numeric"
@@ -86,26 +96,21 @@ function TileEditavel({ label, digitos, onChange, cor }) {
     );
 }
 
-function TileTotal({ label, valor, cor }) {
+function TileTotal({ label, valor, tipo }) {
+    const cor = CORES[tipo];
     return (
         <div className="flex items-center justify-between px-1">
             <span className="text-[12px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</span>
             <span className="text-[15px] font-black text-gray-900 dark:text-white">
-                <span className={cor || ''}>R$</span> {formatarValorFinanceiro(valor)}
+                <span className={cor?.texto || ''}>R$</span> {formatarValorFinanceiro(valor)}
             </span>
         </div>
     );
 }
 
 function TileResultado({ resultado, aPagar, tamanho = 'text-2xl', copiavel = false }) {
-    const [copiado, setCopiado] = useState(false);
     const valorFormatado = `R$ ${formatarValorFinanceiro(Math.abs(resultado))}`;
-
-    async function copiar() {
-        await navigator.clipboard.writeText(valorFormatado);
-        setCopiado(true);
-        setTimeout(() => setCopiado(false), 1500);
-    }
+    const [copiado, copiar] = useCopiar(valorFormatado);
 
     return (
         <div className={`relative rounded-lg p-4 flex items-center justify-between gap-3 h-full ${aPagar ? 'bg-danger/10' : 'bg-success/10'}`}>
@@ -142,35 +147,36 @@ function BlocoIcms() {
     const totalDebito = saidasNfe + estorno;
     const totalCredito = devolucoes + nfeEntrada + cte + acumulado;
     const resultado = totalCredito - totalDebito;
-    const resultadoParaFicarCredor = Math.abs(resultado) / 0.15;
+    const emDebito = resultado < 0;
+    const resultadoParaFicarCredor = Math.abs(resultado) / ALIQUOTA_ICMS;
 
     return (
         <Painel titulo="ICMS" icon="dollar-sign" cor="bg-brand/10 text-brand">
             <Subsecao titulo="Débito" cor="text-danger">
-                <Tile label="Saídas NF-e" valor={saidasNfe} cor="text-danger" />
-                <TileEditavel label="Estorno de Débito" digitos={estornoDebitoIcms} onChange={setEstornoDebitoIcms} cor="text-danger" />
+                <Tile label="Saídas NF-e" valor={saidasNfe} tipo="debito" />
+                <TileEditavel label="Estorno de Débito" digitos={estornoDebitoIcms} onChange={setEstornoDebitoIcms} tipo="debito" />
             </Subsecao>
-            <TileTotal label="Total Débito" valor={totalDebito} cor="text-danger" />
+            <TileTotal label="Total Débito" valor={totalDebito} tipo="debito" />
 
             <div className="border-t border-gray-100 dark:border-darkBorder" />
 
             <Subsecao titulo="Crédito" cor="text-success">
-                <Tile label="Devoluções" valor={devolucoes} cor="text-success" />
-                <Tile label="NF-e Entrada" valor={nfeEntrada} cor="text-success" />
-                <Tile label="CT-e" valor={cte} cor="text-success" />
-                <TileEditavel label="Acumulado" digitos={acumuladoCreditoIcms} onChange={setAcumuladoCreditoIcms} cor="text-success" />
+                <Tile label="Devoluções" valor={devolucoes} tipo="credito" />
+                <Tile label="NF-e Entrada" valor={nfeEntrada} tipo="credito" />
+                <Tile label="CT-e" valor={cte} tipo="credito" />
+                <TileEditavel label="Acumulado" digitos={acumuladoCreditoIcms} onChange={setAcumuladoCreditoIcms} tipo="credito" />
             </Subsecao>
-            <TileTotal label="Total Crédito" valor={totalCredito} cor="text-success" />
+            <TileTotal label="Total Crédito" valor={totalCredito} tipo="credito" />
 
-            {resultado < 0 ? (
+            {emDebito ? (
                 <div className="grid grid-cols-3 gap-3 items-stretch">
                     <div className="col-span-2">
-                        <TileResultado resultado={resultado} aPagar={resultado < 0} copiavel />
+                        <TileResultado resultado={resultado} aPagar={emDebito} copiavel />
                     </div>
-                    <Tile label="Para ficar credor (÷ 15%)" valor={resultadoParaFicarCredor} cor="text-success" />
+                    <Tile label="Para ficar credor (÷ 15%)" valor={resultadoParaFicarCredor} tipo="credito" />
                 </div>
             ) : (
-                <TileResultado resultado={resultado} aPagar={resultado < 0} copiavel />
+                <TileResultado resultado={resultado} aPagar={emDebito} copiavel />
             )}
         </Painel>
     );
@@ -188,10 +194,10 @@ function BlocoCompraParaFicarCredor() {
             <div className="flex flex-col gap-3">
                 <span className="text-[12px] font-bold text-success uppercase tracking-wider">Compra para ficar credor</span>
                 <div className="grid grid-cols-2 gap-3">
-                    <Tile label="Compra para zerar" valor={compraParaZerar} cor="text-success" copiavel />
-                    <Tile label="Média de venda" valor={mediaVenda} cor="text-success" copiavel />
-                    <Tile label="Faturamento" valor={faturamento} cor="text-success" />
-                    <Tile label="Total de compra para ficar credor" valor={totalCompraParaFicarCredor} cor="text-success" copiavel />
+                    <Tile label="Compra para zerar" valor={compraParaZerar} tipo="credito" copiavel />
+                    <Tile label="Média de venda" valor={mediaVenda} tipo="credito" copiavel />
+                    <Tile label="Faturamento" valor={faturamento} tipo="credito" />
+                    <Tile label="Total de compra para ficar credor" valor={totalCompraParaFicarCredor} tipo="credito" copiavel />
                 </div>
             </div>
         </>
@@ -218,29 +224,29 @@ function BlocoPisCofins() {
     return (
         <Painel titulo="PIS/COFINS" icon="percent" cor="bg-secondary/10 text-secondary">
             <Subsecao titulo="Débito" cor="text-danger">
-                <Tile label="Saída" valor={debitoSaida} cor="text-danger" />
-                <Tile label="ICMS" valor={debitoIcms} cor="text-danger" />
+                <Tile label="Saída" valor={debitoSaida} tipo="debito" />
+                <Tile label="ICMS" valor={debitoIcms} tipo="debito" />
             </Subsecao>
-            <TileTotal label="Base de Débito" valor={baseDebito} cor="text-danger" />
+            <TileTotal label="Base de Débito" valor={baseDebito} tipo="debito" />
             <div className="grid grid-cols-2 gap-3">
-                <Tile label="Débito PIS" valor={debitoPis} cor="text-danger" />
-                <Tile label="Débito COFINS" valor={debitoCofins} cor="text-danger" />
+                <Tile label="Débito PIS" valor={debitoPis} tipo="debito" />
+                <Tile label="Débito COFINS" valor={debitoCofins} tipo="debito" />
             </div>
 
             <div className="border-t border-gray-100 dark:border-darkBorder" />
 
             <Subsecao titulo="Crédito" cor="text-success">
-                <Tile label="Compra Revenda" valor={compraRevenda} cor="text-success" />
-                <Tile label="ICMS/ST/IPI" valor={icmsStIpiRevenda} cor="text-success" />
-                <Tile label="Frete" valor={frete} cor="text-success" />
-                <Tile label="ICMS" valor={icmsCte} cor="text-success" />
-                <Tile label="Devolução Revenda" valor={devolucaoRevenda} cor="text-success" />
-                <Tile label="ICMS/ST/IPI" valor={icmsStIpiEntrada} cor="text-success" />
+                <Tile label="Compra Revenda" valor={compraRevenda} tipo="credito" />
+                <Tile label="ICMS/ST/IPI" valor={icmsStIpiRevenda} tipo="credito" />
+                <Tile label="Frete" valor={frete} tipo="credito" />
+                <Tile label="ICMS" valor={icmsCte} tipo="credito" />
+                <Tile label="Devolução Revenda" valor={devolucaoRevenda} tipo="credito" />
+                <Tile label="ICMS/ST/IPI" valor={icmsStIpiEntrada} tipo="credito" />
             </Subsecao>
-            <TileTotal label="Base de Crédito" valor={baseCredito} cor="text-success" />
+            <TileTotal label="Base de Crédito" valor={baseCredito} tipo="credito" />
             <div className="grid grid-cols-2 gap-3">
-                <Tile label="Crédito PIS" valor={creditoPis} cor="text-success" />
-                <Tile label="Crédito COFINS" valor={creditoCofins} cor="text-success" />
+                <Tile label="Crédito PIS" valor={creditoPis} tipo="credito" />
+                <Tile label="Crédito COFINS" valor={creditoCofins} tipo="credito" />
             </div>
 
             <div className="border-t border-gray-100 dark:border-darkBorder" />

@@ -4,7 +4,7 @@ import Icon from '@/components/Icon';
 import { CustomSelect, formatarMesAnoAbrev } from '@/lib/utils';
 
 export default function Topbar() {
-    const { usuario, logout, darkMode, toggleDarkMode, sidebarMobileAberto, setSidebarMobileAberto,
+    const { usuario, logout, sidebarMobileAberto, setSidebarMobileAberto,
         empresas, empresaAtualId, setEmpresaAtualId, competencias, competenciaAtualId, setCompetenciaAtualId } = useAppContext();
 
     const opcoesEmpresa = empresas.map(e => ({ value: e.id, label: e.nome_fantasia || e.razao_social }));
@@ -49,10 +49,6 @@ export default function Topbar() {
                 </div>
 
                 <div className="flex items-center gap-1">
-                    <button onClick={toggleDarkMode} className="p-2 rounded-md hover:bg-white/5 transition text-darkMuted hover:text-white">
-                        <Icon name={darkMode ? 'sun' : 'moon'} className="w-5 h-5" />
-                    </button>
-                    <div className="hidden sm:block w-[1px] h-8 bg-white/10 mx-1"></div>
                     <span className="hidden sm:inline text-[12px] font-semibold text-darkText mr-1">{usuario?.nome}</span>
                     <button type="button" onClick={() => logout()} aria-label="Sair" className="text-darkMuted hover:text-danger transition p-2 rounded-md hover:bg-danger/15">
                         <Icon name="log-out" className="w-4 h-4" />
