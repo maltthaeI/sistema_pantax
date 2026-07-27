@@ -129,27 +129,48 @@ export const AppProvider = ({ children }) => {
             setAcumuladoCreditoIcms('');
 
             // ==== PIS/COFINS: Base x Alíquota, não soma direta ====
-            // Base débito = Valor Total das saídas - ICMS das saídas.
-            const baseDebito = somar(linhasEmitidas, 'emitidas', 'valor_total', 'saida')
-                - somar(linhasEmitidas, 'emitidas', 'valor_icms', 'saida');
+            // Débito, igual ao ICMS: campo Saída (Valor Total das saídas
+            // selecionadas em Emitidas) e campo ICMS (Valor ICMS das mesmas
+            // saídas) — a base é a diferença entre os dois.
+            const debitoSaida = somar(linhasEmitidas, 'emitidas', 'valor_total', 'saida');
+            const debitoIcms = somar(linhasEmitidas, 'emitidas', 'valor_icms', 'saida');
+            const baseDebito = debitoSaida - debitoIcms;
 
-            // Base crédito = (Recebidas + CT-e + devoluções de Emitidas), cada uma
-            // com Valor Total menos os impostos que ela tiver (ICMS/ICMS ST/IPI).
-            const baseCreditoRecebidas = somar(linhasRecebidas, 'recebidas', 'valor_total')
-                - (somar(linhasRecebidas, 'recebidas', 'valor_icms') + somar(linhasRecebidas, 'recebidas', 'valor_icms_st') + somar(linhasRecebidas, 'recebidas', 'valor_ipi'));
-            const baseCreditoCte = somar(linhasCte, 'cte', 'valor_total') - somar(linhasCte, 'cte', 'valor_icms');
-            const baseCreditoDevolucao = somar(linhasEmitidas, 'emitidas', 'valor_total', 'entrada')
-                - (somar(linhasEmitidas, 'emitidas', 'valor_icms', 'entrada') + somar(linhasEmitidas, 'emitidas', 'valor_icms_st', 'entrada') + somar(linhasEmitidas, 'emitidas', 'valor_ipi', 'entrada'));
-            const baseCredito = baseCreditoRecebidas + baseCreditoCte + baseCreditoDevolucao;
+            // Crédito, em 6 linhas: Compra Revenda/ICMS-ST-IPI (Recebidas, só
+            // categoria Revenda), Frete/ICMS (CT-e) e Devolução Revenda/ICMS-ST-IPI
+            // (entrada em Emitidas, só linhas selecionadas — mesma seleção do débito).
+            const compraRevenda = somar(linhasRecebidas, 'recebidas', 'valor_total', null, 'revenda');
+            const icmsStIpiRevenda = somar(linhasRecebidas, 'recebidas', 'valor_icms', null, 'revenda')
+                + somar(linhasRecebidas, 'recebidas', 'valor_icms_st', null, 'revenda')
+                + somar(linhasRecebidas, 'recebidas', 'valor_ipi', null, 'revenda');
+            const frete = somar(linhasCte, 'cte', 'valor_total');
+            const icmsCte = somar(linhasCte, 'cte', 'valor_icms');
+            const devolucaoRevenda = somar(linhasEmitidas, 'emitidas', 'valor_total', 'entrada');
+            const icmsStIpiEntrada = somar(linhasEmitidas, 'emitidas', 'valor_icms', 'entrada')
+                + somar(linhasEmitidas, 'emitidas', 'valor_icms_st', 'entrada')
+                + somar(linhasEmitidas, 'emitidas', 'valor_ipi', 'entrada');
+            const baseCredito = compraRevenda - icmsStIpiRevenda + frete - icmsCte + devolucaoRevenda - icmsStIpiEntrada;
 
             const debitoPis = baseDebito * ALIQUOTA_PIS;
             const creditoPis = baseCredito * ALIQUOTA_PIS;
             const debitoCofins = baseDebito * ALIQUOTA_COFINS;
             const creditoCofins = baseCredito * ALIQUOTA_COFINS;
+            const resultadoPis = debitoPis - creditoPis;
+            const resultadoCofins = debitoCofins - creditoCofins;
+
+            // ==== Compra para ficar credor: quanto precisaria comprar (a mais)
+            // pra zerar o PIS a pagar, projetado sobre a média de venda ====
+            const compraParaZerar = Math.round((resultadoPis / ALIQUOTA_PIS) * 100) / 100;
+            const mediaVenda = baseDebito / 20;
+            const faturamento = mediaVenda * 10;
+            const totalCompraParaFicarCredor = compraParaZerar + faturamento;
+
             setApuracaoPisCofins({
-                baseDebito, baseCredito,
-                debitoPis, creditoPis, resultadoPis: debitoPis - creditoPis,
-                debitoCofins, creditoCofins, resultadoCofins: debitoCofins - creditoCofins,
+                debitoSaida, debitoIcms, baseDebito,
+                compraRevenda, icmsStIpiRevenda, frete, icmsCte, devolucaoRevenda, icmsStIpiEntrada, baseCredito,
+                debitoPis, creditoPis, resultadoPis,
+                debitoCofins, creditoCofins, resultadoCofins,
+                compraParaZerar, mediaVenda, faturamento, totalCompraParaFicarCredor,
             });
 
             setAbaAtual('resumo');
@@ -385,7 +406,7 @@ export const AppProvider = ({ children }) => {
             <div className="flex min-h-screen items-center justify-center bg-[#EDEFF0] text-[#454545] p-4 select-none font-sans">
                 <div className="w-full max-w-sm bg-white border border-gray-200 rounded-xl p-8 shadow-sm flex flex-col gap-6">
                     <div className="text-center flex flex-col items-center">
-                        <div className="h-11 w-11 rounded-xl bg-brand text-white flex items-center justify-center font-black text-lg mb-3">P</div>
+                        <img src="/logo-pantax.webp" alt="Pantax" className="h-11 w-11 mb-3" />
                         <h1 className="text-lg font-bold text-gray-900">Pantax</h1>
                         <p className="text-[11px] text-gray-400 mt-1">Apuração fiscal — insira suas credenciais</p>
                     </div>

@@ -14,13 +14,13 @@ export default function Topbar() {
     }));
 
     return (
-        <header className="sticky top-0 z-30 bg-white dark:bg-darkBg no-print">
-            <div className="px-4 sm:px-6 h-16 flex justify-between items-center gap-3 border-b border-gray-100 dark:border-darkBorder">
+        <header className="sticky top-0 z-30 bg-darkCard no-print">
+            <div className="px-4 sm:px-6 h-16 flex justify-between items-center gap-3 border-b border-white/10">
                 <button
                     type="button"
                     onClick={() => setSidebarMobileAberto(!sidebarMobileAberto)}
                     aria-label="Abrir menu"
-                    className="lg:hidden p-2 -ml-2 rounded-md hover:bg-gray-100 dark:hover:bg-darkHover transition text-gray-600 dark:text-darkMuted shrink-0"
+                    className="lg:hidden p-2 -ml-2 rounded-md hover:bg-white/5 transition text-darkMuted hover:text-white shrink-0"
                 >
                     <Icon name="menu" className="w-5 h-5" />
                 </button>
@@ -33,7 +33,7 @@ export default function Topbar() {
                             options={opcoesEmpresa}
                             placeholder="Selecione a empresa"
                             pesquisavel
-                            className="bg-gray-50 dark:bg-darkElevated border border-gray-200 dark:border-darkBorder text-[12px] font-semibold"
+                            className="bg-darkElevated border border-white/10 text-[12px] font-semibold text-white"
                         />
                     </div>
                     <div className="w-full max-w-[190px]">
@@ -43,18 +43,18 @@ export default function Topbar() {
                             options={opcoesCompetencia}
                             placeholder="Competência"
                             disabled={opcoesCompetencia.length === 0}
-                            className="bg-gray-50 dark:bg-darkElevated border border-gray-200 dark:border-darkBorder rounded-md px-3 py-2 text-[12px] font-semibold outline-none"
+                            className="bg-darkElevated border border-white/10 rounded-md px-3 py-2 text-[12px] font-semibold text-white outline-none"
                         />
                     </div>
                 </div>
 
                 <div className="flex items-center gap-1">
-                    <button onClick={toggleDarkMode} className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-darkHover transition text-gray-600 dark:text-darkMuted">
+                    <button onClick={toggleDarkMode} className="p-2 rounded-md hover:bg-white/5 transition text-darkMuted hover:text-white">
                         <Icon name={darkMode ? 'sun' : 'moon'} className="w-5 h-5" />
                     </button>
-                    <div className="hidden sm:block w-[1px] h-8 bg-gray-200 dark:bg-darkBorder mx-1"></div>
-                    <span className="hidden sm:inline text-[12px] font-semibold text-gray-700 dark:text-darkText mr-1">{usuario?.nome}</span>
-                    <button type="button" onClick={() => logout()} aria-label="Sair" className="text-gray-400 hover:text-danger transition p-2 rounded-md hover:bg-danger/10 dark:hover:bg-danger/15">
+                    <div className="hidden sm:block w-[1px] h-8 bg-white/10 mx-1"></div>
+                    <span className="hidden sm:inline text-[12px] font-semibold text-darkText mr-1">{usuario?.nome}</span>
+                    <button type="button" onClick={() => logout()} aria-label="Sair" className="text-darkMuted hover:text-danger transition p-2 rounded-md hover:bg-danger/15">
                         <Icon name="log-out" className="w-4 h-4" />
                     </button>
                 </div>

@@ -191,7 +191,9 @@ export default function ResumoCfopTab({ origem, titulo, mostrarGerar = false }) 
             ) : (
                 tabelaUnica ? (
                     <div className="flex flex-col gap-4">
-                        <ColunaCfop titulo="CTEs Recebidos" icon="truck" cor="text-info" linhas={linhas} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} colunas={colunas} selecionavel={selecionavel} />
+                        <div className="w-full lg:max-w-[50%]">
+                            <ColunaCfop titulo="CTEs Recebidos" icon="truck" cor="text-info" linhas={linhas} selecionados={selecionados} onToggle={toggle} onToggleTodos={toggleTodos} colunas={colunas} selecionavel={selecionavel} />
+                        </div>
                     </div>
                 ) : (
                     <div className="flex flex-col gap-4">
