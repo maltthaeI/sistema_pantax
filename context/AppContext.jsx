@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { chaveLinhaCfop } from '@/lib/utils';
+import { STORAGE_BUCKET_IMPORTACOES } from '@/lib/storageBucket';
 
 export { supabase };
 
@@ -333,19 +334,32 @@ export const AppProvider = ({ children }) => {
 
     // A empresa não é escolhida antes do upload — nasce do nome do arquivo de Emitidas.
     // arquivos = { emitidas, recebidas, cte } (File cada) — os 3 sobem juntos.
+    // Os arquivos sobem direto do navegador pro Supabase Storage (não passam pela
+    // Vercel Function) — a rota da API recebe só os caminhos, um JSON pequeno.
+    // Isso evita o limite de 4,5MB de corpo de requisição das serverless functions,
+    // que estourava com as 3 planilhas (emitidas/recebidas/cte) somadas no FormData.
     async function uploadRelatorioNfe(arquivos, tipoCalculo) {
         setUploadEmAndamento(true);
+        const pasta = crypto.randomUUID();
+        const caminhosEnviados = [];
         try {
+            const arquivosStorage = {};
+            for (const tipo of ['emitidas', 'recebidas', 'cte']) {
+                const arquivo = arquivos[tipo];
+                const path = `${pasta}/${tipo}.xlsx`;
+                const { error } = await supabase.storage.from(STORAGE_BUCKET_IMPORTACOES).upload(path, arquivo, {
+                    contentType: arquivo.type || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                });
+                if (error) throw new Error(`Falha ao enviar arquivo de ${tipo} para o Storage: ${error.message}`);
+                caminhosEnviados.push(path);
+                arquivosStorage[tipo] = { path, nome: arquivo.name };
+            }
+
             const token = await obterToken();
-            const formData = new FormData();
-            formData.append('emitidas', arquivos.emitidas);
-            formData.append('recebidas', arquivos.recebidas);
-            formData.append('cte', arquivos.cte);
-            formData.append('tipo_calculo', tipoCalculo);
             const res = await fetch('/api/import/nfe', {
                 method: 'POST',
-                headers: { Authorization: `Bearer ${token}` },
-                body: formData,
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ tipo_calculo: tipoCalculo, arquivos: arquivosStorage }),
             });
             const json = await res.json();
             if (!res.ok) {
@@ -359,6 +373,9 @@ export const AppProvider = ({ children }) => {
                 setUltimaImportacaoEm(Date.now());
             }
         } catch (e) {
+            if (caminhosEnviados.length > 0) {
+                await supabase.storage.from(STORAGE_BUCKET_IMPORTACOES).remove(caminhosEnviados).catch(() => {});
+            }
             alert('Erro na importação: ' + e.message);
         } finally {
             setUploadEmAndamento(false);
