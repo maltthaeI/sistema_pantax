@@ -28,15 +28,15 @@ function ColunaCfop({ titulo, icon, cor, linhas, selecionados, onToggle, onToggl
                                     <input type="checkbox" checked={todosSelecionados} onChange={e => onToggleTodos(linhas, e.target.checked)} className="accent-brand" />
                                 </th>
                             )}
-                            <th className={`${selecionavel ? 'pl-1' : 'pl-12'} pr-12 py-3 font-bold whitespace-nowrap text-center`}>CFOP</th>
+                            <th className={`${selecionavel ? 'pl-1' : 'pl-4 xl:pl-6'} pr-4 xl:pr-6 py-3 font-bold whitespace-nowrap text-center`}>CFOP</th>
                             {colunas.map(c => (
-                                <th key={c.campo} className="px-12 py-3 font-bold whitespace-nowrap text-center">{c.label}</th>
+                                <th key={c.campo} className="px-4 xl:px-6 py-3 font-bold whitespace-nowrap text-center">{c.label}</th>
                             ))}
                         </tr>
                     </thead>
                     <tbody>
                         {linhas.length === 0 ? (
-                            <tr><td colSpan={colSpanVazio} className="px-12 py-6 text-center text-gray-400 italic">Nenhum CFOP encontrado.</td></tr>
+                            <tr><td colSpan={colSpanVazio} className="px-4 xl:px-6 py-6 text-center text-gray-400 italic">Nenhum CFOP encontrado.</td></tr>
                         ) : linhas.map(l => {
                             const chave = chaveLinhaCfop(l);
                             const marcada = selecionados.has(chave);
@@ -51,9 +51,9 @@ function ColunaCfop({ titulo, icon, cor, linhas, selecionados, onToggle, onToggl
                                             <Icon name="check" className={`w-4 h-4 text-brand mx-auto ${marcada ? '' : 'invisible'}`} />
                                         </td>
                                     )}
-                                    <td className={`${selecionavel ? 'pl-1' : 'pl-12'} pr-12 py-3 font-medium text-gray-800 dark:text-white whitespace-nowrap text-center`}>{l.cfop}</td>
+                                    <td className={`${selecionavel ? 'pl-1' : 'pl-4 xl:pl-6'} pr-4 xl:pr-6 py-3 font-medium text-gray-800 dark:text-white whitespace-nowrap text-center`}>{l.cfop}</td>
                                     {colunas.map(c => (
-                                        <td key={c.campo} className="px-12 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap text-center">R$ {formatarValorFinanceiro(l[c.campo])}</td>
+                                        <td key={c.campo} className="px-4 xl:px-6 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap text-center">R$ {formatarValorFinanceiro(l[c.campo])}</td>
                                     ))}
                                 </tr>
                             );
@@ -63,9 +63,9 @@ function ColunaCfop({ titulo, icon, cor, linhas, selecionados, onToggle, onToggl
                         <tfoot>
                             <tr className="font-bold">
                                 {selecionavel && <td className="pl-8 pr-1 py-3.5 whitespace-nowrap text-center"></td>}
-                                <td className={`${selecionavel ? 'pl-1' : 'pl-12'} pr-12 py-3.5 text-gray-800 dark:text-white whitespace-nowrap text-center`}>Total</td>
+                                <td className={`${selecionavel ? 'pl-1' : 'pl-4 xl:pl-6'} pr-4 xl:pr-6 py-3.5 text-gray-800 dark:text-white whitespace-nowrap text-center`}>Total</td>
                                 {colunas.map(c => (
-                                    <td key={c.campo} className="px-12 py-3.5 text-gray-900 dark:text-white whitespace-nowrap text-center">R$ {formatarValorFinanceiro(somar(c.campo))}</td>
+                                    <td key={c.campo} className="px-4 xl:px-6 py-3.5 text-gray-900 dark:text-white whitespace-nowrap text-center">R$ {formatarValorFinanceiro(somar(c.campo))}</td>
                                 ))}
                             </tr>
                         </tfoot>
