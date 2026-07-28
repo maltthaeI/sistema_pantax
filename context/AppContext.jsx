@@ -1,6 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, setSomenteLeitura } from '@/lib/supabaseClient';
 import { chaveLinhaCfop } from '@/lib/utils';
 import { STORAGE_BUCKET_IMPORTACOES } from '@/lib/storageBucket';
 
@@ -17,6 +17,12 @@ export const AppProvider = ({ children }) => {
     const [senhaInput, setSenhaInput] = useState('');
     const [erroLogin, setErroLogin] = useState('');
     const isAdmin = usuario?.nivel === 'Administrador';
+    const isDemo = usuario?.nivel === 'Demo';
+
+    // Espelha isDemo no cliente Supabase para bloquear escrita antes de sair para a rede (ver lib/supabaseClient.js).
+    useEffect(() => {
+        setSomenteLeitura(isDemo);
+    }, [isDemo]);
 
     // Tema único (escuro) — sem opção de troca pro usuário.
     useEffect(() => { document.documentElement.classList.add('dark'); }, []);
@@ -203,6 +209,34 @@ export const AppProvider = ({ children }) => {
         return data;
     }
 
+    // Login de 1 clique com a conta de demonstração (somente leitura), usada no link do
+    // currículo. Credenciais fixas via env — se não estiverem configuradas, avisa em vez
+    // de tentar logar com "undefined".
+    const entrarComoDemo = async () => {
+        setErroLogin('');
+        const email = process.env.NEXT_PUBLIC_DEMO_EMAIL;
+        const senha = process.env.NEXT_PUBLIC_DEMO_SENHA;
+        if (!email || !senha) {
+            setErroLogin('Acesso demo não configurado.');
+            return;
+        }
+
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
+        if (error) {
+            setErroLogin('Não foi possível entrar no modo demonstração.');
+            return;
+        }
+
+        const perfil = await carregarPerfil(data.user.id);
+        if (!perfil) {
+            setErroLogin('Conta demo sem perfil cadastrado. Fale com um administrador.');
+            await supabase.auth.signOut();
+            return;
+        }
+
+        setUsuario(perfil);
+    };
+
     const efetuarLogin = async (e) => {
         e.preventDefault();
         setErroLogin('Entrando...');
@@ -339,6 +373,10 @@ export const AppProvider = ({ children }) => {
     // Isso evita o limite de 4,5MB de corpo de requisição das serverless functions,
     // que estourava com as 3 planilhas (emitidas/recebidas/cte) somadas no FormData.
     async function uploadRelatorioNfe(arquivos, tipoCalculo) {
+        if (usuario?.nivel === 'Demo') {
+            alert('Modo demonstração: importação desabilitada.');
+            return;
+        }
         setUploadEmAndamento(true);
         const pasta = crypto.randomUUID();
         const caminhosEnviados = [];
@@ -452,13 +490,19 @@ export const AppProvider = ({ children }) => {
                             Entrar no Sistema
                         </button>
                     </form>
+
+                    {process.env.NEXT_PUBLIC_DEMO_EMAIL && (
+                        <button type="button" onClick={entrarComoDemo} className="w-full flex items-center justify-center gap-2 bg-white border border-dashed border-brand text-brand hover:bg-brand/5 py-2 rounded text-[13px] font-semibold transition">
+                            Entrar como Visitante (Demo)
+                        </button>
+                    )}
                 </div>
             </div>
         );
     }
 
     const value = {
-        isAdmin, usuario, setUsuario, logout,
+        isAdmin, isDemo, entrarComoDemo, usuario, setUsuario, logout,
         abaAtual, setAbaAtual, resumoSubAba, setResumoSubAba,
         sidebarMobileAberto, setSidebarMobileAberto,
         empresas, empresaAtualId, setEmpresaAtualId, empresaAtual,

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
-const NIVEIS_VALIDOS = ['Operador', 'Administrador'];
+const NIVEIS_VALIDOS = ['Operador', 'Administrador', 'Demo'];
 
 // Confirma quem está chamando a API (pelo token da sessão atual) e exige que seja Administrador.
 // Isso é o que impede qualquer pessoa de usar esta rota para criar contas com nível de acesso total.

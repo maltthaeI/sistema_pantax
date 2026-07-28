@@ -30,8 +30,13 @@ async function baixarDoStorage(admin, path) {
 // baixamos do Storage pra processar.
 export async function POST(request) {
     const admin = getSupabaseAdmin();
-    const { usuario, erro } = await exigirUsuarioLogado(request, admin);
+    const { usuario, perfil, erro } = await exigirUsuarioLogado(request, admin);
     if (erro) return erro;
+    // Esta rota usa o client de service role (ignora RLS), então o bloqueio de
+    // escrita do usuário demo precisa ser explícito aqui — RLS sozinha não cobre.
+    if (perfil?.nivel === 'Demo') {
+        return NextResponse.json({ error: 'Modo demonstração: importação desabilitada.' }, { status: 403 });
+    }
 
     const corpo = await request.json();
     const tipoCalculo = corpo.tipo_calculo;
