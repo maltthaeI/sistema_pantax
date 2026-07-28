@@ -4,6 +4,7 @@ import { AppProvider, useAppContext } from '@/context/AppContext';
 import DashboardTab from '@/components/DashboardTab';
 import UploadTab from '@/components/UploadTab';
 import ResumoTab from '@/components/ResumoTab';
+import PrecificacaoTab from '@/components/PrecificacaoTab';
 import Modals from '@/components/Modals';
 import Sidebar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
@@ -20,6 +21,7 @@ function MainContent() {
                     {abaAtual === 'dashboard' && <DashboardTab />}
                     {abaAtual === 'upload' && <UploadTab />}
                     {abaAtual === 'resumo' && <ResumoTab />}
+                    {abaAtual === 'precificacao' && <PrecificacaoTab />}
                 </div>
                 <Modals />
             </div>

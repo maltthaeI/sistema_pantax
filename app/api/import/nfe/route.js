@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { exigirUsuarioLogado } from '@/lib/apiAuth';
 import { importarRelatorioNfe } from '@/lib/xlsxParsers/importarRelatorioNfe';
 import { extrairNomeEmpresaDoArquivo } from '@/lib/nomeEmpresaDoArquivo';
+import { BUCKET_IMPORTACOES } from '@/lib/storageBuckets';
 
 export const maxDuration = 60;
 
@@ -22,40 +23,59 @@ export async function POST(request) {
     const { usuario, erro } = await exigirUsuarioLogado(request, admin);
     if (erro) return erro;
 
-    const formData = await request.formData();
-    const tipoCalculo = formData.get('tipo_calculo');
+    const body = await request.json();
+    const tipoCalculo = body.tipo_calculo;
     if (!['previa', 'fechamento'].includes(tipoCalculo)) {
         return NextResponse.json({ error: 'Informe se é Prévia ou Fechamento.' }, { status: 400 });
     }
 
+    // Os arquivos já foram subidos direto do navegador pro Storage (ver AppContext.uploadRelatorioNfe) —
+    // aqui só chegam os caminhos, pra não estourar o limite de corpo de requisição da Vercel.
+    const arquivosInfo = body.arquivos || {};
     const arquivosPorTipo = {};
+    const caminhosParaLimpar = [];
     for (const tipo of TIPOS_ARQUIVO) {
-        const file = formData.get(tipo);
-        if (!file) return NextResponse.json({ error: `Arquivo de ${tipo} é obrigatório.` }, { status: 400 });
-        arquivosPorTipo[tipo] = file;
+        const info = arquivosInfo[tipo];
+        if (!info?.caminho || !info?.nome) return NextResponse.json({ error: `Arquivo de ${tipo} é obrigatório.` }, { status: 400 });
+        arquivosPorTipo[tipo] = info;
+        caminhosParaLimpar.push(info.caminho);
+    }
+
+    const limparArquivosTemporarios = () => admin.storage.from(BUCKET_IMPORTACOES).remove(caminhosParaLimpar);
+
+    let buffersPorTipo;
+    try {
+        buffersPorTipo = {};
+        for (const tipo of TIPOS_ARQUIVO) {
+            const { data, error: erroDownload } = await admin.storage.from(BUCKET_IMPORTACOES).download(arquivosPorTipo[tipo].caminho);
+            if (erroDownload) throw new Error(`Falha ao ler arquivo de ${tipo}: ${erroDownload.message}`);
+            buffersPorTipo[tipo] = await data.arrayBuffer();
+        }
+    } catch (e) {
+        await limparArquivosTemporarios();
+        return NextResponse.json({ error: e.message }, { status: 400 });
     }
 
     // Nome da empresa vem sempre do arquivo de Emitidas.
     let nomeEmpresa, empresaId;
     try {
-        nomeEmpresa = extrairNomeEmpresaDoArquivo(arquivosPorTipo.emitidas.name);
+        nomeEmpresa = extrairNomeEmpresaDoArquivo(arquivosPorTipo.emitidas.nome);
         empresaId = await encontrarOuCriarEmpresa(admin, nomeEmpresa);
     } catch (e) {
+        await limparArquivosTemporarios();
         return NextResponse.json({ error: e.message }, { status: 400 });
     }
 
     const { data: batch } = await admin.from('import_batches').insert([{
         empresa_id: empresaId, tipo_arquivo: 'nfe', tipo_calculo: tipoCalculo,
-        nome_arquivo_emitidas: arquivosPorTipo.emitidas.name,
-        nome_arquivo_recebidas: arquivosPorTipo.recebidas.name,
-        nome_arquivo_cte: arquivosPorTipo.cte.name,
+        nome_arquivo_emitidas: arquivosPorTipo.emitidas.nome,
+        nome_arquivo_recebidas: arquivosPorTipo.recebidas.nome,
+        nome_arquivo_cte: arquivosPorTipo.cte.nome,
         status: 'processando', importado_por: usuario.id,
     }]).select().single();
 
     try {
-        const arquivos = await Promise.all(TIPOS_ARQUIVO.map(async (tipo) => ({
-            tipo, buffer: await arquivosPorTipo[tipo].arrayBuffer(),
-        })));
+        const arquivos = TIPOS_ARQUIVO.map(tipo => ({ tipo, buffer: buffersPorTipo[tipo] }));
         const resultado = await importarRelatorioNfe(admin, { empresaId, arquivos, batchId: batch.id, tipoCalculo });
 
         await admin.from('import_batches').update({
@@ -68,5 +88,7 @@ export async function POST(request) {
     } catch (e) {
         await admin.from('import_batches').update({ status: 'erro', erro_detalhe: e.message }).eq('id', batch.id);
         return NextResponse.json({ error: e.message }, { status: 500 });
+    } finally {
+        await limparArquivosTemporarios();
     }
 }

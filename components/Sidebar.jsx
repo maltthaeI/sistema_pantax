@@ -6,6 +6,7 @@ const NAV_ITEMS = [
     { key: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
     { key: 'upload', label: 'Importar', icon: 'upload' },
     { key: 'resumo', label: 'Resumo', icon: 'pie-chart' },
+    { key: 'precificacao', label: 'Precificação', icon: 'tag' },
 ];
 
 export default function Sidebar() {

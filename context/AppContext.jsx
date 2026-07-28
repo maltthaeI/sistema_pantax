@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { chaveLinhaCfop } from '@/lib/utils';
+import { BUCKET_IMPORTACOES } from '@/lib/storageBuckets';
 
 export { supabase };
 
@@ -333,21 +334,36 @@ export const AppProvider = ({ children }) => {
 
     // A empresa não é escolhida antes do upload — nasce do nome do arquivo de Emitidas.
     // arquivos = { emitidas, recebidas, cte } (File cada) — os 3 sobem juntos.
+    //
+    // Os arquivos vão direto do navegador para o Supabase Storage (não passam pelo
+    // corpo da rota /api/import/nfe): a Vercel limita o corpo de Serverless Functions
+    // a ~4.5MB, e essas planilhas de NF-e passam disso com facilidade. A rota recebe
+    // só os caminhos e baixa os arquivos do Storage usando a service role.
     async function uploadRelatorioNfe(arquivos, tipoCalculo) {
         setUploadEmAndamento(true);
+        const caminhosSubidos = [];
         try {
             const token = await obterToken();
-            const formData = new FormData();
-            formData.append('emitidas', arquivos.emitidas);
-            formData.append('recebidas', arquivos.recebidas);
-            formData.append('cte', arquivos.cte);
-            formData.append('tipo_calculo', tipoCalculo);
+            const { data: { user } } = await supabase.auth.getUser();
+            const pasta = `${user.id}/${Date.now()}`;
+
+            const arquivosInfo = {};
+            for (const [tipo, arquivo] of Object.entries(arquivos)) {
+                const caminho = `${pasta}/${tipo}-${arquivo.name}`;
+                const { error: erroUpload } = await supabase.storage
+                    .from(BUCKET_IMPORTACOES)
+                    .upload(caminho, arquivo);
+                if (erroUpload) throw new Error(`Falha ao subir arquivo de ${tipo}: ${erroUpload.message}`);
+                caminhosSubidos.push(caminho);
+                arquivosInfo[tipo] = { caminho, nome: arquivo.name };
+            }
+
             const res = await fetch('/api/import/nfe', {
                 method: 'POST',
-                headers: { Authorization: `Bearer ${token}` },
-                body: formData,
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ tipo_calculo: tipoCalculo, arquivos: arquivosInfo }),
             });
-            const json = await res.json();
+            const json = await res.json().catch(() => ({ error: `Resposta inesperada do servidor (status ${res.status}).` }));
             if (!res.ok) {
                 alert('Erro na importação: ' + (json.error || res.statusText));
             } else {
@@ -360,6 +376,9 @@ export const AppProvider = ({ children }) => {
             }
         } catch (e) {
             alert('Erro na importação: ' + e.message);
+            // Se o erro foi antes (ou durante) a chamada à rota, o servidor nunca chegou
+            // a limpar os arquivos temporários do Storage — limpa aqui pra não acumular lixo.
+            if (caminhosSubidos.length) await supabase.storage.from(BUCKET_IMPORTACOES).remove(caminhosSubidos).catch(() => {});
         } finally {
             setUploadEmAndamento(false);
         }
