@@ -143,29 +143,29 @@ export default function UploadTab() {
                     <table className="w-full text-[12px] tabela-listrada">
                         <thead>
                             <tr className="text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                                <th className="px-12 py-3 font-bold whitespace-nowrap text-center">Arquivos</th>
-                                <th className="px-12 py-3 font-bold whitespace-nowrap text-center">Competência</th>
-                                <th className="px-12 py-3 font-bold whitespace-nowrap text-center">Linhas</th>
-                                <th className="px-12 py-3 font-bold whitespace-nowrap text-center">Status</th>
-                                <th className="px-12 py-3 font-bold whitespace-nowrap text-center">Data</th>
+                                <th className="px-4 xl:px-6 py-3 font-bold whitespace-nowrap text-center">Arquivos</th>
+                                <th className="px-4 xl:px-6 py-3 font-bold whitespace-nowrap text-center">Competência</th>
+                                <th className="px-4 xl:px-6 py-3 font-bold whitespace-nowrap text-center">Linhas</th>
+                                <th className="px-4 xl:px-6 py-3 font-bold whitespace-nowrap text-center">Status</th>
+                                <th className="px-4 xl:px-6 py-3 font-bold whitespace-nowrap text-center">Data</th>
                             </tr>
                         </thead>
                         <tbody>
                             {importBatches.length === 0 ? (
-                                <tr><td colSpan={5} className="px-12 py-8 text-center text-gray-400 italic">Nenhuma importação ainda.</td></tr>
+                                <tr><td colSpan={5} className="px-4 xl:px-6 py-8 text-center text-gray-400 italic">Nenhuma importação ainda.</td></tr>
                             ) : importBatches.map(b => (
                                 <tr key={b.id}>
-                                    <td className="px-12 py-3 font-medium text-gray-800 dark:text-white truncate max-w-[260px] text-center" title={[b.nome_arquivo_emitidas, b.nome_arquivo_recebidas, b.nome_arquivo_cte].filter(Boolean).join(', ')}>
+                                    <td className="px-4 xl:px-6 py-3 font-medium text-gray-800 dark:text-white truncate max-w-[260px] text-center" title={[b.nome_arquivo_emitidas, b.nome_arquivo_recebidas, b.nome_arquivo_cte].filter(Boolean).join(', ')}>
                                         {[b.nome_arquivo_emitidas, b.nome_arquivo_recebidas, b.nome_arquivo_cte].filter(Boolean).join(', ') || '—'}
                                     </td>
-                                    <td className="px-12 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap text-center">{b.ano ? `${formatarMesAnoAbrev(b.ano, b.mes)} · ${b.tipo_calculo === 'previa' ? 'Prévia' : 'Fechamento'}` : '—'}</td>
-                                    <td className="px-12 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap text-center">{b.linhas_processadas}{b.linhas_erro > 0 ? ` (${b.linhas_erro} erro)` : ''}</td>
-                                    <td className="px-12 py-3 whitespace-nowrap text-center">
+                                    <td className="px-4 xl:px-6 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap text-center">{b.ano ? `${formatarMesAnoAbrev(b.ano, b.mes)} · ${b.tipo_calculo === 'previa' ? 'Prévia' : 'Fechamento'}` : '—'}</td>
+                                    <td className="px-4 xl:px-6 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap text-center">{b.linhas_processadas}{b.linhas_erro > 0 ? ` (${b.linhas_erro} erro)` : ''}</td>
+                                    <td className="px-4 xl:px-6 py-3 whitespace-nowrap text-center">
                                         {b.status === 'concluido' && <span className="inline-flex items-center gap-1 text-success font-semibold"><Icon name="check-circle" className="w-3.5 h-3.5" /> Concluído</span>}
                                         {b.status === 'erro' && <span className="inline-flex items-center gap-1 text-danger font-semibold" title={b.erro_detalhe}><Icon name="x-circle" className="w-3.5 h-3.5" /> Erro</span>}
                                         {b.status === 'processando' && <span className="inline-flex items-center gap-1 text-warning font-semibold"><Icon name="clock" className="w-3.5 h-3.5" /> Processando</span>}
                                     </td>
-                                    <td className="px-12 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap text-center">{new Date(b.created_at).toLocaleString('pt-BR')}</td>
+                                    <td className="px-4 xl:px-6 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap text-center">{new Date(b.created_at).toLocaleString('pt-BR')}</td>
                                 </tr>
                             ))}
                         </tbody>
