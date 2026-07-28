@@ -188,12 +188,14 @@ export default function PrecificacaoTab() {
             </label>
             <p className="text-[11px] text-gray-400 px-1 -mt-4">Onde a empresa está sediada — define quando a venda é dentro do estado e qual alíquota interestadual (7% ou 12%) se aplica.</p>
 
-            {/* A partir daqui, cada coluna reproduz a mesma coluna da planilha
-                original (Apuração Contábil / de Impostos / Financeira) — os campos
-                de preenchimento ficam junto dos resultados que eles alimentam,
-                na mesma ordem de cima a baixo que tinham no Excel. */}
+            {/* A Apuração Contábil da planilha original virava uma coluna só,
+                enorme — quebrada aqui em 3 tabelas lado a lado (Venda / Compra /
+                Despesas de Vendas), cada uma com seus campos de preenchimento
+                junto dos resultados que eles alimentam. O restante da Apuração
+                Contábil (Lucro Líquido Operacional em diante) desce pra linha de
+                baixo, ao lado de Impostos e Financeira. */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                <Painel titulo="Apuração Contábil" icon="file-text" cor="bg-info/10 text-info">
+                <Painel titulo="Venda" icon="trending-up" cor="bg-info/10 text-info">
                     <CampoMoeda label="Preço de Venda" digitos={precoVendaDigitos} onChange={setPrecoVendaDigitos} />
 
                     <label className="flex flex-col gap-1">
@@ -212,7 +214,7 @@ export default function PrecificacaoTab() {
                             <div className="flex flex-col gap-1">
                                 <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Produto Importado?</span>
                                 <div className="flex items-center h-[42px]">
-                                    <Switch checked={produtoImportadoVenda} onChange={setProdutoImportadoVenda} />
+                                    <Switch checked={produtoImportadoVenda} onChange={setProdutoImportadoVenda} color="success" />
                                 </div>
                             </div>
                         )}
@@ -224,8 +226,9 @@ export default function PrecificacaoTab() {
                     <LinhaResultado label="PIS/COFINS na Venda" valor={contabil.pisCofinsVenda} />
                     <LinhaResultado label="Total de Impostos na Venda" valor={contabil.totalImpostosVenda} negrito />
                     <LinhaResultado label="Receita Líquida de Venda" valor={contabil.receitaLiquidaVenda} negrito />
-                    <Divisor />
+                </Painel>
 
+                <Painel titulo="Compra" icon="trending-down" cor="bg-secondary/10 text-secondary">
                     <CampoMoeda label="Preço de Compra" digitos={precoCompraDigitos} onChange={setPrecoCompraDigitos} />
                     <label className="flex flex-col gap-1">
                         <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Compra — Origem do Produto</span>
@@ -242,8 +245,9 @@ export default function PrecificacaoTab() {
                     <LinhaResultado label="Total de Crédito" valor={contabil.totalCredito} negrito />
                     <LinhaResultado label="CMV" valor={contabil.cmv} negrito />
                     <LinhaResultado label="Lucro Bruto" valor={contabil.lucroBruto} negrito />
-                    <Divisor />
+                </Painel>
 
+                <Painel titulo="Despesas de Vendas" icon="tag" cor="bg-brand/10 text-brand">
                     <CampoMoeda label="Rebate" digitos={rebateDigitos} onChange={setRebateDigitos} />
                     <CampoPercentual label="Taxa de Comissão" digitos={taxaComissaoDigitos} onChange={setTaxaComissaoDigitos} />
                     <CampoMoeda label="Taxa de Pedido" digitos={taxaPedidoDigitos} onChange={setTaxaPedidoDigitos} />
@@ -253,21 +257,10 @@ export default function PrecificacaoTab() {
                     <CampoPercentual label="Crédito ICMS Frete" digitos={aliquotaCreditoIcmsFreteDigitos} onChange={setAliquotaCreditoIcmsFreteDigitos} />
                     <LinhaResultado label="Crédito de ICMS Frete" valor={contabil.creditoIcmsFrete} />
                     <LinhaResultado label="Crédito de PIS/COFINS (Despesas)" valor={contabil.creditoPisCofinsDespesas} />
-                    <Divisor />
-
-                    <LinhaResultado label="Lucro Líquido Operacional" valor={contabil.lucroLiquidoOperacional} negrito />
-                    <CampoPercentual label="Despesa da Operação" digitos={aliquotaDespesaOperacaoDigitos} onChange={setAliquotaDespesaOperacaoDigitos} />
-                    <LinhaResultado label="Base de Cálculo IRPJ/CSLL" valor={contabil.baseIrpjCsll} />
-                    <CampoPercentual label="IRPJ" digitos={aliquotaIrpjDigitos} onChange={setAliquotaIrpjDigitos} />
-                    <LinhaResultado label="IRPJ" valor={contabil.valorIrpj} />
-                    <CampoPercentual label="CSLL" digitos={aliquotaCsllDigitos} onChange={setAliquotaCsllDigitos} />
-                    <LinhaResultado label="CSLL" valor={contabil.valorCsll} />
-                    <LinhaResultado label="Total de Impostos sobre o Lucro" valor={contabil.totalImpostosLucro} negrito />
-                    <Spacer />
-                    <Divisor />
-                    <TileResultadoFinal label="Lucro Líquido Contábil" valor={contabil.lucroLiquidoContabil} margem={contabil.margemLiquidaContabil} />
                 </Painel>
+            </div>
 
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 <Painel titulo="Apuração de Impostos" icon="percent" cor="bg-secondary/10 text-secondary">
                     <LinhaResultado label="ICMS Débito (Venda)" valor={impostos.icmsVenda} />
                     <LinhaResultado label="ICMS Crédito (Compra)" valor={impostos.icmsCompraCredito} />
@@ -284,7 +277,7 @@ export default function PrecificacaoTab() {
                     {impostos.totalDifal > 0 && (
                         <div className="flex items-center justify-between px-1">
                             <span className="text-[12px] font-semibold text-gray-600 dark:text-gray-300">Recolher DIFAL nesta venda?</span>
-                            <Switch checked={pagaDifal} onChange={setPagaDifal} />
+                            <Switch checked={pagaDifal} onChange={setPagaDifal} color="success" />
                         </div>
                     )}
                     <Spacer />
@@ -308,6 +301,20 @@ export default function PrecificacaoTab() {
                     <Spacer />
                     <Divisor />
                     <TileResultadoFinal label="Lucro Líquido" valor={financeiro.lucroLiquidoFinanceiro} margem={financeiro.margemLiquidaFinanceira} />
+                </Painel>
+
+                <Painel titulo="Apuração Contábil" icon="file-text" cor="bg-info/10 text-info">
+                    <LinhaResultado label="Lucro Líquido Operacional" valor={contabil.lucroLiquidoOperacional} negrito />
+                    <CampoPercentual label="Despesa da Operação" digitos={aliquotaDespesaOperacaoDigitos} onChange={setAliquotaDespesaOperacaoDigitos} />
+                    <LinhaResultado label="Base de Cálculo IRPJ/CSLL" valor={contabil.baseIrpjCsll} />
+                    <CampoPercentual label="IRPJ" digitos={aliquotaIrpjDigitos} onChange={setAliquotaIrpjDigitos} />
+                    <LinhaResultado label="IRPJ" valor={contabil.valorIrpj} />
+                    <CampoPercentual label="CSLL" digitos={aliquotaCsllDigitos} onChange={setAliquotaCsllDigitos} />
+                    <LinhaResultado label="CSLL" valor={contabil.valorCsll} />
+                    <LinhaResultado label="Total de Impostos sobre o Lucro" valor={contabil.totalImpostosLucro} negrito />
+                    <Spacer />
+                    <Divisor />
+                    <TileResultadoFinal label="Lucro Líquido Contábil" valor={contabil.lucroLiquidoContabil} margem={contabil.margemLiquidaContabil} />
                 </Painel>
             </div>
         </div>
